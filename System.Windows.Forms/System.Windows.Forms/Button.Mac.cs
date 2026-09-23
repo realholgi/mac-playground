@@ -115,7 +115,7 @@ namespace System.Windows.Forms
 			{
 				base.IsDefault = value;
 				if (button != null)
-					button.KeyEquivalent = "\r";
+					button.KeyEquivalent = value ? "\r" : "";
 			}
 		}
 
