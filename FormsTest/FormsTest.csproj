@@ -1,16 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net8.0-windows;net8.0-macos</TargetFrameworks>
+    <TargetFrameworks>net10.0-windows;net10.0-macos27.0</TargetFrameworks>
     <MonoBundlingExtraArgs>--registrar:dynamic</MonoBundlingExtraArgs>
-    <!-- <RuntimeIdentifier Condition="'$(TargetFramework)' != 'net8.0-windows'">osx-x64</RuntimeIdentifier> -->
+    <!-- <RuntimeIdentifier Condition="'$(TargetFramework)' != 'net10.0-windows'">osx-x64</RuntimeIdentifier> -->
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
     <DisableExtraReferences>true</DisableExtraReferences>
-    <DefineConstants Condition="'$(TargetFramework)' == 'net8.0-macos'">$(DefineConstants);MAC</DefineConstants>
+    <DefineConstants Condition="'$(TargetFramework)' == 'net10.0-macos27.0'">$(DefineConstants);MAC</DefineConstants>
     <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
-    <OutputType Condition="'$(TargetFramework)' == 'net8.0-macos'">Exe</OutputType>
-	  <OutputType Condition="'$(TargetFramework)' == 'net8.0-windows'">WinExe</OutputType>
-    <UseWindowsForms Condition="'$(TargetFramework)' == 'net8.0-windows'">true</UseWindowsForms>
+    <OutputType Condition="'$(TargetFramework)' == 'net10.0-macos27.0'">Exe</OutputType>
+	  <OutputType Condition="'$(TargetFramework)' == 'net10.0-windows'">WinExe</OutputType>
+    <UseWindowsForms Condition="'$(TargetFramework)' == 'net10.0-windows'">true</UseWindowsForms>
     <UseMonoRuntime>false</UseMonoRuntime>
     <CustomResourceTypesSupport>true</CustomResourceTypesSupport>
     <ExtrasEnableEmbeddedResourceCodeGenerator>false</ExtrasEnableEmbeddedResourceCodeGenerator>
@@ -20,19 +20,16 @@
     <Product>FormsTest</Product>
     <Brand></Brand>
     <MonoBundlingExtraArgs>--registrar:static</MonoBundlingExtraArgs>
-    <SupportedOSPlatformVersion Condition="'$(TargetFramework)' == 'net8.0-macos'">11</SupportedOSPlatformVersion>
+    <SupportedOSPlatformVersion Condition="'$(TargetFramework)' == 'net10.0-macos27.0'">14</SupportedOSPlatformVersion>
     <PathMap Condition="'$(Configuration)' == 'Release' OR $(Configuration.EndsWith('- Release'))">$(MSBuildProjectDirectory)/obj/$(Configuration)/$(TargetFramework)/$(RuntimeIdentifier)=.</PathMap>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="System.Resources.Extensions" Version="6.0.0" />
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0-macos'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-macos27.0'">
     <ProjectReference Include="..\System.Windows.Forms\System.Windows.Forms.csproj" />
     <ProjectReference Include="..\System.Drawing.Common\System.Drawing.Common.csproj" />
     <ProjectReference Include="..\MacApi\MacApi.csproj" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0-windows'">
-    <PackageReference Include="Microsoft.Private.Winforms" Version="[6.0.1-dev]" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Forms\ToolstripForm.cs">
@@ -250,7 +247,7 @@
     <Compile Include="Forms\MainForm.PrintPreview.cs" />
     <!--<Compile Include="Forms\DataGridForm.cs" />-->
     <Compile Include="Forms\DateTimeForm.cs" />
-    <Compile Include="Forms\NotificationsForm.cs" Condition="'$(TargetFramework)' == 'net8.0-macos'" />
+    <Compile Include="Forms\NotificationsForm.cs" Condition="'$(TargetFramework)' == 'net10.0-macos27.0'" />
     <Compile Include="Controls\TextureBrushControl.cs" />
     <Compile Include="Controls\TextureBrushControl2.cs" />
     <Compile Include="Experiments\FileDescriptors.cs">

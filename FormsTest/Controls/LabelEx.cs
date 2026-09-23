@@ -20,6 +20,7 @@ namespace FormsTest
 
 		[DefaultValue(false)]
 		public bool NoPadding { get; set; } = false;
+		[DefaultValue(false)]
 		public bool NoClipping { get; set; } = false;
 
 		[DefaultValue(MacTextAlignment.Default)]

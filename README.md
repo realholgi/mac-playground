@@ -3,10 +3,12 @@
 This is a mix of code that was developed during our effort to port eM Client to macOS. It is a hodgepodge of various projects and experiments. The notable ones are listed below. The code is released as-is.
 
 To test the experiments:
-* Make sure .NET 8 SDK for macOS is installed
+* Make sure .NET 10 SDK and the macOS workload for Xcode 27 are installed (macOS 14 or newer)
 * Run `dotnet workload restore` from the Terminal
 * Open solution folder in Visual Studio Code or Visual Studio
 * Run the test application
+
+Debug macOS builds omit the hardened runtime so ad-hoc signed native libraries can load. Release builds retain the hardened runtime and require appropriate code signing for distribution.
 
 ## System.Drawing
 

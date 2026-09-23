@@ -8,6 +8,7 @@ namespace MailClient.UI.Controls
 {
 	public partial class ControlWaiting : UserControl
 	{
+		[DefaultValue(true)]
 		public bool InvalidationEnabled { get; set; } = true;
 
 		static class UIUtils
@@ -29,6 +30,7 @@ namespace MailClient.UI.Controls
 		}
 
 		private ImageAlignmentType imageAlignment = ImageAlignmentType.Center;
+		[DefaultValue(ImageAlignmentType.Center)]
 		public ImageAlignmentType ImageAlignment
 		{
 			get

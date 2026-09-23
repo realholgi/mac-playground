@@ -18,6 +18,7 @@ namespace FormsTest.Controls
 		}
 
 		Image image;
+		[System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)]
 		public Image Image
 		{
 			get
