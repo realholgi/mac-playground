@@ -28,6 +28,7 @@ namespace System.Windows.Forms
 			button.Activated += (sender, e) => PerformClick();
 			button.Enabled = Enabled;
 			button.Image = i == null ? null : i.ToNSImage();
+			button.ImagePosition = NSCellImagePosition.ImageLeft;
 			if (IsDefault)
 				button.KeyEquivalent = "\r";
 
