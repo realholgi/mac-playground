@@ -736,10 +736,12 @@ namespace System.Drawing {
 		
 		public Matrix Transform {
 			get {
-				return modelMatrix;
+				return modelMatrix.Clone();
 			}
 			set {
-				modelMatrix = value;
+				if (value == null)
+					throw new ArgumentNullException(nameof(value));
+				modelMatrix = value.Clone();
 				applyModelView();
 			}
 		}
