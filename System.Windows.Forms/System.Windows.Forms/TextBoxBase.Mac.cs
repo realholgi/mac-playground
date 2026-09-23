@@ -147,7 +147,7 @@ namespace System.Windows.Forms
 			value = preprocessText != null ? preprocessText(value, Text) : value;
 
 			value = value ?? String.Empty;
-			if (MaxLength >= 0 && value.Length > MaxLength)
+			if (MaxLength > 0 && value.Length > MaxLength)
 				value = value.Substring(0, MaxLength);
 			
 			return value;
