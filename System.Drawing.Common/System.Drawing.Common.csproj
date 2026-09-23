@@ -24,7 +24,7 @@
   </ItemGroup>
   <PropertyGroup>
     <ApiCompatExcludeAttributeList>..\ApiCompatExcludeAttributes.txt</ApiCompatExcludeAttributeList>
-    <ContractDependencyPaths>$(PkgMicrosoft_NETCore_App_Ref)\ref\net7.0</ContractDependencyPaths>
+    <ContractDependencyPaths>$(PkgMicrosoft_NETCore_App_Ref)\ref\net8.0</ContractDependencyPaths>
     <ApiCompatBaseline Condition="'$(TargetFramework)' == 'net8.0-ios'">ApiCompatBaseline.iOS.txt</ApiCompatBaseline>
   </PropertyGroup>
   <ItemGroup>
