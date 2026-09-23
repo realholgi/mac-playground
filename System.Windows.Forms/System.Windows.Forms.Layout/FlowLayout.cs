@@ -205,11 +205,16 @@ namespace System.Windows.Forms.Layout
 
 		internal override Size GetPreferredSize(object container, Size proposedSize)
 		{
-			FlowLayoutPanel parent = container as FlowLayoutPanel;
+			Control parent = container as Control;
+			if (parent == null)
+				return Size.Empty;
+
+			FlowLayoutPanel flow_parent = parent as FlowLayoutPanel;
+			FlowLayoutSettings settings = flow_parent == null ? default_settings : flow_parent.LayoutSettings;
 
 			int width = 0;
 			int height = 0;
-			bool horizontal = parent.FlowDirection == FlowDirection.LeftToRight || parent.FlowDirection == FlowDirection.RightToLeft;
+			bool horizontal = settings.FlowDirection == FlowDirection.LeftToRight || settings.FlowDirection == FlowDirection.RightToLeft;
 
 			int size_in_flow_direction = 0;
 			int size_in_other_direction = 0;
@@ -227,7 +232,7 @@ namespace System.Windows.Forms.Layout
 				Padding control_margin = control.Margin;
 				if (horizontal) {
 					increase = control_preferred_size.Width + control_margin.Horizontal;
-					if (parent.WrapContents && proposedSize.Width != 0 && size_in_flow_direction != 0 && size_in_flow_direction + increase > proposedSize.Width || forceFlowBreak) {
+					if (settings.WrapContents && proposedSize.Width != 0 && size_in_flow_direction != 0 && size_in_flow_direction + increase > proposedSize.Width || forceFlowBreak) {
 						width = Math.Max(width, size_in_flow_direction);
 						size_in_flow_direction = 0;
 						height += size_in_other_direction;
@@ -237,7 +242,7 @@ namespace System.Windows.Forms.Layout
 					size_in_other_direction = Math.Max(size_in_other_direction, control_preferred_size.Height + control_margin.Vertical);
 				} else {
 					increase = control_preferred_size.Height + control_margin.Vertical;
-					if (parent.WrapContents && proposedSize.Height != 0 && size_in_flow_direction != 0 && size_in_flow_direction + increase > proposedSize.Height || forceFlowBreak) {
+					if (settings.WrapContents && proposedSize.Height != 0 && size_in_flow_direction != 0 && size_in_flow_direction + increase > proposedSize.Height || forceFlowBreak) {
 						height = Math.Max(height, size_in_flow_direction);
 						size_in_flow_direction = 0;
 						width += size_in_other_direction;
@@ -247,7 +252,7 @@ namespace System.Windows.Forms.Layout
 					size_in_other_direction = Math.Max(size_in_other_direction, control_preferred_size.Width + control_margin.Horizontal);
 				}
 
-				forceFlowBreak = parent.LayoutSettings.GetFlowBreak(control);
+				forceFlowBreak = settings.GetFlowBreak(control);
 			}
 
 			if (horizontal) {
