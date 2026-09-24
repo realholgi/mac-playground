@@ -33,8 +33,6 @@ namespace FormsTest
 		public CancellationForm()
 		{
 			InitializeComponent();
-			
-			NetworkUtility.NetworkAvailabilityChanged += NetworkUtility_NetworkAvailabilityChanged;
 		}
 
 		private void InitializeComponent()
@@ -99,6 +97,7 @@ namespace FormsTest
 		protected override void OnLoad(EventArgs e)
 		{
 			base.OnLoad(e);
+			NetworkUtility.NetworkAvailabilityChanged += NetworkUtility_NetworkAvailabilityChanged;
 		}
 
 		async void StartButton_Click(object sender, EventArgs e)

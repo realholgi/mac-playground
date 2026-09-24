@@ -3,6 +3,11 @@ using System.Linq.Expressions;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
+#if MAC
+using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
+#endif
 
 namespace FormsTest
 {
@@ -118,8 +123,10 @@ namespace FormsTest
 			{
 				lock (staticLock)
 				{
+#if !MAC
 					if (networkAvailabilityChanged == null)
 						return RealIsNetworkAvailable;
+#endif
 					return oldIsNetworkAvailable;
 				}
 			}
@@ -133,10 +140,14 @@ namespace FormsTest
 				{
 					if (networkAvailabilityChanged == null)
 					{
+#if !MAC
 						oldIsNetworkAvailable = RealIsNetworkAvailable;
+#endif
+						networkAvailabilityChanged += value;
 						AddNetworkChangeHandler();
 					}
-					networkAvailabilityChanged += value;
+					else
+						networkAvailabilityChanged += value;
 				}
 			}
 			remove
@@ -161,45 +172,85 @@ namespace FormsTest
 		}
 
 #if MAC
-		static SystemConfiguration.NetworkReachability? reachability;
+		static CancellationTokenSource? monitorCancellation;
+		static SemaphoreSlim? networkChanged;
 
 		static void AddNetworkChangeHandler()
 		{
-			if (reachability == null)
-				reachability = new SystemConfiguration.NetworkReachability("www.apple.com");
-
-			reachability.SetNotification(ReachabilityDidChange);
-			reachability.Schedule(CoreFoundation.CFRunLoop.Main, CoreFoundation.CFRunLoop.ModeDefault);
+			monitorCancellation = new CancellationTokenSource();
+			networkChanged = new SemaphoreSlim(0, 1);
+			NetworkChange.NetworkAddressChanged += NetworkChange_NetworkAddressChanged;
+			_ = MonitorAvailability(monitorCancellation, networkChanged);
 		}
 
 		static void RemoveNetworkChangeHandler()
 		{
-			if (reachability != null)
-				reachability.Unschedule(CoreFoundation.CFRunLoop.Main, CoreFoundation.CFRunLoop.ModeDefault);
+			NetworkChange.NetworkAddressChanged -= NetworkChange_NetworkAddressChanged;
+			monitorCancellation?.Cancel();
+			monitorCancellation = null;
+			networkChanged = null;
+			oldIsNetworkAvailable = false;
 		}
 
-		static void ReachabilityDidChange(SystemConfiguration.NetworkReachabilityFlags flags)
+		static void NetworkChange_NetworkAddressChanged(object? sender, EventArgs e)
 		{
-			System.Diagnostics.Debug.WriteLine($"ReachabilityDidChange:{flags}");
-			var reachable = 0 != (flags & SystemConfiguration.NetworkReachabilityFlags.Reachable);
-			if (oldIsNetworkAvailable != reachable)
+			lock (staticLock)
 			{
-				oldIsNetworkAvailable = reachable;
-				networkAvailabilityChanged?.Invoke(reachability, EventArgs.Empty);
+				if (networkChanged != null && networkChanged.CurrentCount == 0)
+					networkChanged.Release();
 			}
 		}
 
-		private static bool RealIsNetworkAvailable
+		static async Task MonitorAvailability(CancellationTokenSource source, SemaphoreSlim changed)
 		{
-			get
+			try
 			{
-				if (reachability == null)
-					reachability = new SystemConfiguration.NetworkReachability("www.apple.com");
-
-				reachability.GetFlags(out var flags);
-				return 0 != (flags & SystemConfiguration.NetworkReachabilityFlags.Reachable);
+				while (!source.IsCancellationRequested)
+				{
+					bool available = await CanConnect(source.Token).ConfigureAwait(false);
+					EventHandler<EventArgs>? handler = null;
+					lock (staticLock)
+					{
+						if (ReferenceEquals(monitorCancellation, source) && oldIsNetworkAvailable != available)
+						{
+							oldIsNetworkAvailable = available;
+							handler = networkAvailabilityChanged;
+						}
+					}
+					handler?.Invoke(null, EventArgs.Empty);
+					await changed.WaitAsync(TimeSpan.FromSeconds(30), source.Token).ConfigureAwait(false);
+				}
+			}
+			catch (OperationCanceledException) when (source.IsCancellationRequested)
+			{
+			}
+			finally
+			{
+				changed.Dispose();
+				source.Dispose();
 			}
 		}
+
+		static async Task<bool> CanConnect(CancellationToken cancellationToken)
+		{
+			using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+			timeout.CancelAfter(TimeSpan.FromSeconds(5));
+			using var client = new TcpClient();
+			try
+			{
+				await client.ConnectAsync("www.google.com", 443, timeout.Token).ConfigureAwait(false);
+				return true;
+			}
+			catch (SocketException)
+			{
+				return false;
+			}
+			catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+			{
+				return false;
+			}
+		}
+
 #endif
 	}
 
