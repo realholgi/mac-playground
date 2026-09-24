@@ -12,7 +12,7 @@ Debug macOS builds omit the hardened runtime so ad-hoc signed native libraries c
 
 Trim analysis is disabled for normal, untrimmed builds. Set `PublishTrimmed=true` when preparing a trimmed build to enable the analyzer and review its warnings before shipping.
 
-Some build warnings remain for legacy API experiments (such as WebKit `WebView` and SystemConfiguration reachability), the WinForms drawing backend, and formatter-based ResX/Cursor serialization. Their modern replacements do not always provide equivalent behavior; these warnings are left visible rather than suppressed.
+Some build warnings remain for legacy SystemConfiguration reachability experiments, the WinForms drawing backend, and formatter-based ResX/Cursor serialization. Their modern replacements do not always provide equivalent behavior; these warnings are left visible rather than suppressed. The `WebForm` example uses `WKWebView` to display its page.
 
 The `Core Data Test` example uses a main-queue managed object context, matching the UI-thread code that creates and saves its in-memory objects.
 
