@@ -295,8 +295,6 @@ namespace System.Windows.Forms.CocoaInternal
 				}
 			}
 
-			Debug.WriteLine($"Converting message: {msg.message}, {keyCode}");
-
 			string keys = GetCharactersForKeyPress((ushort)keyCode.Value, flags, ref deadKeyState);
 
 			uint dummy = 0;

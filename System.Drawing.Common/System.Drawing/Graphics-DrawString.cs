@@ -71,26 +71,6 @@ namespace System.Drawing
 
 		public SizeF MeasureString(string text, Font font, SizeF area, StringFormat format, out int charactersFitted, out int linesFilled)
 		{
-#if DEBUG
-			++measureStringCount;
-			measureStringStopWatch.Start();
-			var result = MeasureStringInternal(text, font, area, format ?? StringFormat.GenericDefault, out charactersFitted, out linesFilled);
-			measureStringStopWatch.Stop();
-
-			if (measureStringCount % 1000 == 0)
-			{
-				Console.WriteLine($"MeasureString1k: {measureStringStopWatch.Elapsed.TotalSeconds}s");
-				measureStringStopWatch.Reset();
-			}
-			return result;
-		}
-
-		static long measureStringCount = 0;
-		static Diagnostics.Stopwatch measureStringStopWatch = new Diagnostics.Stopwatch();
-
-		public SizeF MeasureStringInternal(string text, Font font, SizeF area, StringFormat format, out int charactersFitted, out int linesFilled)
-		{
-#endif
 			if (string.IsNullOrEmpty(text)) {
 				charactersFitted = linesFilled = 0;
 				return SizeF.Empty;
@@ -285,25 +265,6 @@ namespace System.Drawing
 
 		public void DrawString(string s, Font font, Brush brush, RectangleF layoutRectangle, StringFormat format)
 		{
-#if DEBUG
-			++drawStringCount;
-			drawStringStopWatch.Start();
-			DrawStringInternal(s, font, brush, layoutRectangle, format);
-			drawStringStopWatch.Stop();
-
-			if (drawStringCount % 1000 == 0)
-			{
-				Console.WriteLine($"DrawString1k: {drawStringStopWatch.Elapsed.TotalSeconds}s");
-				drawStringStopWatch.Reset();
-			}
-		}
-
-		static long drawStringCount = 0;
-		static Diagnostics.Stopwatch drawStringStopWatch = new Diagnostics.Stopwatch();
-
-		internal void DrawStringInternal(string s, Font font, Brush brush, RectangleF layoutRectangle, StringFormat format = null)
-		{
-#endif
 			if (String.IsNullOrEmpty(s))
 				return;
 

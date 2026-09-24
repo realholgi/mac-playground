@@ -51,11 +51,6 @@ namespace System.Drawing
 		protected LruCache<string, Entry> lurch;
 		protected bool enabled;
 
-#if DEBUG
-		int total = 0;
-		int miss = 0;
-#endif
-
 #if __MACOS__
 		List<NSObject> observers;
 
@@ -116,24 +111,10 @@ namespace System.Drawing
 			if (!enabled)
 				return createEntryDelegate(s, font, brush, layoutRectangle, format);
 			
-#if DEBUG
-			if (total % 1000 == 0)
-			{
-				Console.WriteLine($"draw cache hit:{total - miss}, miss:{miss}, size:{lurch.Count}");
-				total = miss = 0;
-			}
-
-			++total;
-#endif
-
 			var key = GetKey(s, font, brush, layoutRectangle, format);
 			if (lurch.TryGetValue(key, out Entry c))
 				if (c.ConformsTo(s, font, brush, layoutRectangle, format))
 					return c;
-
-#if DEBUG
-			++miss;
-#endif
 
 			var entry = createEntryDelegate(s, font, brush, layoutRectangle, format);
 			lurch.Set(key, entry);
@@ -178,11 +159,6 @@ namespace System.Drawing
 		protected LruCache<string, Entry> lurch;
 		protected bool enabled;
 
-#if DEBUG
-		int total = 0;
-		int miss = 0;
-#endif
-
 		public MeasureStringCache(int capacity, bool enabled = true)
 		{
 			this.enabled = enabled;
@@ -203,24 +179,11 @@ namespace System.Drawing
 			if (!enabled)
 				return createEntryDelegate(text, font, layoutArea, format);
 
-#if DEBUG
-			if (total % 1000 == 0)
-			{
-				Console.WriteLine($"measure cache hit:{total - miss}, miss:{miss}, size:{lurch.Count}");
-				total = miss = 0;
-			}
-
-			++total;
-#endif
-
 			var key = GetKey(text, font, layoutArea, format);
 			if (lurch.TryGetValue(key, out Entry c))
 				if (c.ConformsTo(text, font, layoutArea, format))
 					return c;
 
-#if DEBUG
-			++miss;
-#endif
 			var entry = createEntryDelegate(text, font, layoutArea, format);
 			lurch.Set(key, entry);
 			return entry;

@@ -1724,8 +1724,6 @@ namespace System.Windows.Forms {
 #endif
 			DialogResult = DialogResult.None;
 
-			Debug.WriteLine("ShowDialog");
-
 			Application.RunLoop(true, new ModalApplicationContext(this));
 
 			if (this.owner != null) {

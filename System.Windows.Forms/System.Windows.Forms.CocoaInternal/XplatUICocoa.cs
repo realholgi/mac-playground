@@ -2019,7 +2019,6 @@ namespace System.Windows.Forms {
 
 		void ShowWindow(NSWindow window, bool activate)
 		{
-			Console.WriteLine($"ShowWindow:{window.Title}, activate={activate}");
 			if (activate)
 				window.MakeKeyAndOrderFront(window);
 			else if (window.ParentWindow == null)

@@ -318,8 +318,6 @@ namespace System.Windows.Forms
 
 		public static void InitGtk ()
 		{	
-			Console.WriteLine ("ThemeGtk Init");		
-			
 			gdk_init_check (IntPtr.Zero, IntPtr.Zero);	
 
 			dispmgr =  gdk_display_manager_get ();
@@ -381,7 +379,6 @@ namespace System.Windows.Forms
 
 		public ThemeGtk () : base ()
 		{
-			Console.WriteLine ("ThemeGtk constructor");
 			InitGtk ();
 			
 			LoadSysDefaultColors ();	
