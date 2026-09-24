@@ -30,6 +30,12 @@ The `System.Drawing` directory contains a fork of the https://github.com/mono/sy
 
 The `System.Windows.Forms` directory contains a fork of the Mono System.Windows.Forms implementation. It contains a Cocoa backend to allow applications run on 64-bit macOS systems. Layout code was heavily overhauled and debugged on both a test application and a full UI of eM Client. Further experiments were made with replacing some controls with their native counterparts (akin to https://github.com/Clancey/MonoMac.Windows.Form), which can be done on per-control basis.
 
+The anchored-control resize regression can be checked with
+`dotnet build tests/AnchorResize/AnchorResize.csproj` followed by
+`tests/AnchorResize/bin/Debug/net10.0-macos27.0/osx-arm64/AnchorResize.app/Contents/MacOS/AnchorResize`.
+It verifies that a label anchored to all four sides grows and shrinks with a
+`SplitContainer` panel, including while the panel suspends layout during resize.
+
 ## License
 
 The code is released under the MIT X11 license unless noted otherwise in a specific source file. Any changes in this repository to the original code are published under the MIT X11 license.
