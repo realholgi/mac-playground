@@ -29,8 +29,7 @@ namespace FormsTest.Experiments
 		{
 			SocketsHttpHandler,
 			MonoWebRequestHandler,
-			CFNetworkHandler,
-			NSUrlSessionHandler,
+			NSUrlSessionHandler = 3,
 		}
 
 		class Client : HttpClient
@@ -73,7 +72,6 @@ namespace FormsTest.Experiments
 					default:
 #if MAC
 					case MessageHandlerType.SocketsHttpHandler: return new SocketsHttpHandler();
-					case MessageHandlerType.CFNetworkHandler: return new CFNetworkHandler();
 					case MessageHandlerType.NSUrlSessionHandler: return new NSUrlSessionHandler();
 #endif
 					case MessageHandlerType.MonoWebRequestHandler: return CreateMonoWebRequestHandler();
@@ -158,7 +156,6 @@ namespace FormsTest.Experiments
 
 			var makers = new Func<Client>[] {
 #if MAC
-				() => { return Client.Create(MessageHandlerType.CFNetworkHandler); },
 				() => { return Client.Create(MessageHandlerType.NSUrlSessionHandler); },
 #endif
 				() => { return Client.Create(MessageHandlerType.SocketsHttpHandler); },
