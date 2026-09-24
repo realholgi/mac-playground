@@ -294,11 +294,6 @@ namespace System.Resources
             else
             {
                 Type valueType = (value is null) ? typeof(object) : value.GetType();
-                if (value != null && !valueType.IsSerializable)
-                {
-                    throw new InvalidOperationException(string.Format(SR.NotSerializableType, _name, valueType.FullName));
-                }
-
                 TypeConverter tc = TypeDescriptor.GetConverter(valueType);
                 bool toString = tc.CanConvertTo(typeof(string));
                 bool fromString = tc.CanConvertFrom(typeof(string));
