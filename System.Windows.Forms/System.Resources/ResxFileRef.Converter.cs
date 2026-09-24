@@ -141,7 +141,7 @@ namespace System.Resources
                     {
                         Debug.Assert(fileStream != null, "Couldn't open " + fileName);
                         temp = new byte[fileStream.Length];
-                        fileStream.Read(temp, 0, (int)fileStream.Length);
+                        fileStream.ReadExactly(temp, 0, temp.Length);
                     }
 
                     if (toCreate == typeof(byte[]))

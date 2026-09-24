@@ -385,6 +385,11 @@ namespace System.Windows.Forms {
 
 		void ISerializable.GetObjectData (SerializationInfo si, StreamingContext context)
 		{
+			si.AddValue ("CursorData", ToCursorBytes ());
+		}
+
+		internal byte[] ToCursorBytes ()
+		{
 			MemoryStream	ms;
 			BinaryWriter	wr;
 			CursorImage	ci;
@@ -428,7 +433,7 @@ namespace System.Windows.Forms {
 			wr.Write (ci.cursorAND);
 			wr.Flush ();
 
-			si.AddValue ("CursorData", ms.ToArray ());
+			return ms.ToArray ();
 		}
 		#endregion	// Public Instance Methods
 
@@ -504,7 +509,7 @@ namespace System.Windows.Forms {
 				
 				stream.Seek (cursor_dir.idEntries[j].fileOffset, SeekOrigin.Begin);
 				buffer = new byte [cursor_dir.idEntries[j].sizeInBytes];
-				stream.Read (buffer, 0, buffer.Length);
+				stream.ReadExactly (buffer, 0, buffer.Length);
 
 				cih_reader = new BinaryReader(new MemoryStream(buffer));
 

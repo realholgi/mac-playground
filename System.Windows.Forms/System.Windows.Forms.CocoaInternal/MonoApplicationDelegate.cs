@@ -58,14 +58,14 @@ namespace System.Windows.Forms.CocoaInternal
 				IsGoingToPowerOff = false; // For the case the shutdown is going to be cancelled
 
 				foreach(Form form in forms)
-					if (IntPtr.Zero == XplatUI.SendMessage(form.Handle, Msg.WM_QUERYENDSESSION, (IntPtr)1, (IntPtr)ENDSESSION_LOGOFF))
+					if (IntPtr.Zero == XplatUI.SendMessage(form.Handle, Msg.WM_QUERYENDSESSION, (IntPtr)1, new IntPtr(ENDSESSION_LOGOFF)))
 						shouldTerminate = false;
 
 				if (!shouldTerminate)
 					return NSApplicationTerminateReply.Cancel;
 
 				foreach (Form form in forms)
-					XplatUI.SendMessage(form.Handle, Msg.WM_ENDSESSION, (IntPtr)1, (IntPtr)ENDSESSION_LOGOFF);
+					XplatUI.SendMessage(form.Handle, Msg.WM_ENDSESSION, (IntPtr)1, new IntPtr(ENDSESSION_LOGOFF));
 			}
 
 		   if (Application.MessageLoop)

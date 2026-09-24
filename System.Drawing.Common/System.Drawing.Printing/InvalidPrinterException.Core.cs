@@ -13,11 +13,13 @@ namespace System.Drawing.Printing
     [System.Runtime.CompilerServices.TypeForwardedFrom("System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a")]
     public partial class InvalidPrinterException
     {
+        [Obsolete("Binary serialization is obsolete and should not be used.")]
         protected InvalidPrinterException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
             // Ignoring not deserializable input
         }
 
+        [Obsolete("Binary serialization is obsolete and should not be used.")]
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);

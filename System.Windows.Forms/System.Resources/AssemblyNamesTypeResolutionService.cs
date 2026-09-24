@@ -81,7 +81,11 @@ namespace System.Resources
 
         public string GetPathOfAssembly(AssemblyName name)
         {
+            // AssemblyName has no non-obsolete API exposing its original code-base URI;
+            // the ITypeResolutionService contract requires returning that exact location.
+#pragma warning disable SYSLIB0044
             return name.CodeBase;
+#pragma warning restore SYSLIB0044
         }
 
         public Type GetType(string name)

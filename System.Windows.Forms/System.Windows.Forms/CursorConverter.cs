@@ -33,7 +33,6 @@ using System.ComponentModel.Design.Serialization;
 using System.Globalization;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Runtime.Serialization;
 
 namespace System.Windows.Forms
 {
@@ -83,7 +82,6 @@ namespace System.Windows.Forms
 
 			if (destinationType == typeof (byte [])) {
 				Cursor			c;
-				SerializationInfo	si;
 
 				if (value == null) {
 					return new byte [0];
@@ -91,10 +89,7 @@ namespace System.Windows.Forms
 
 				c = (Cursor)value;
 
-				si = new SerializationInfo(typeof(Cursor), new FormatterConverter());
-				((ISerializable)c).GetObjectData(si, new StreamingContext(StreamingContextStates.Remoting));
-
-				return (byte[])si.GetValue("CursorData", typeof(byte[]));
+				return c.ToCursorBytes ();
 			} else if (destinationType == typeof (InstanceDescriptor)) {
 				PropertyInfo[] properties = typeof (Cursors).GetProperties ();
 				foreach (PropertyInfo propInfo in properties) {

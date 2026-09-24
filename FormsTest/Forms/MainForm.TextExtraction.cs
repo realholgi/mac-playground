@@ -217,7 +217,7 @@ namespace FormsTest
 			var model = new NSManagedObjectModel() { Entities = new NSEntityDescription[] { entity } };
 			var coordinator = new NSPersistentStoreCoordinator(model);
 			var store = coordinator.AddPersistentStore(NSPersistentStoreCoordinator.InMemoryStoreType, null, null, null, out var error);
-			return new NSManagedObjectContext { PersistentStoreCoordinator = coordinator };
+			return new NSManagedObjectContext(NSManagedObjectContextConcurrencyType.MainQueue) { PersistentStoreCoordinator = coordinator };
 		}
 
 		[Register("Wrapper")]

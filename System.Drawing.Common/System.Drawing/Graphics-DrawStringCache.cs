@@ -52,8 +52,6 @@ namespace System.Drawing
 		protected bool enabled;
 
 #if __MACOS__
-		List<NSObject> observers;
-
 		List<NSObject> AddObservers()
 		{
 			var observers = new List<NSObject>();
