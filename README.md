@@ -12,7 +12,7 @@ Debug macOS builds omit the hardened runtime so ad-hoc signed native libraries c
 
 Trim analysis is disabled for normal, untrimmed builds. Set `PublishTrimmed=true` when preparing a trimmed build to enable the analyzer and review its warnings before shipping.
 
-Some build warnings remain for the WinForms drawing backend and formatter-based ResX/Cursor serialization. Their modern replacements do not always provide equivalent behavior; these warnings are left visible rather than suppressed. The `WebForm` example uses `WKWebView` to display its page.
+Some build warnings remain for the WinForms drawing backend and formatter-based ResX/Cursor serialization. Their modern replacements do not always provide equivalent behavior; these warnings are left visible rather than suppressed. The `ResXDataNode` serializability check alone follows Windows WinForms .NET 10's local `SYSLIB0050` exemption to retain its rejection of non-serializable values without changing the ResX format. The `WebForm` example uses `WKWebView` to display its page.
 
 The managed POSIX limit struct was renamed from `LibC.rlimit` to `LibC.ResourceLimit`; callers must update the type name. The native `getrlimit`/`setrlimit` entry points and struct layout are unchanged.
 

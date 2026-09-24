@@ -91,10 +91,12 @@ namespace System.Resources
 
             Type valueType = (value is null) ? typeof(object) : value.GetType();
 
+#pragma warning disable SYSLIB0050 // Preserve the WinForms serializability check for ResX resources.
             if (value != null && !valueType.IsSerializable)
             {
                 throw new InvalidOperationException(string.Format(SR.NotSerializableType, name, valueType.FullName));
             }
+#pragma warning restore SYSLIB0050
 
             if (value != null)
             {
