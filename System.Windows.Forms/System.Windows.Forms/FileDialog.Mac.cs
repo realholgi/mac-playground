@@ -236,14 +236,16 @@ namespace System.Windows.Forms
 					var asterisk = Array.IndexOf(extensions, "*") != -1;
 					if (extensions.Length == 1 && asterisk)
 					{
-						// Xamarin's AllowedFileTypes throws when passing null here:
-						var selector = Selector.GetHandle("setAllowedFileTypes:");
-						LibObjc.void_objc_msgSend_IntPtr(Panel.Handle, selector, IntPtr.Zero);
-						Panel.AllowsOtherFileTypes  = true;
+						Panel.AllowedContentTypes = Array.Empty<UTType>();
+						Panel.AllowsOtherFileTypes = true;
 					}
 					else if (extensions.Length > 0)
 					{
-						Panel.AllowedFileTypes = extensions; // Changes the extension in the text field
+						var contentTypes = new List<UTType>(extensions.Length);
+						foreach (var extension in extensions)
+							if (extension != "*" && UTType.CreateFromExtension(extension) is UTType type)
+								contentTypes.Add(type);
+						Panel.AllowedContentTypes = contentTypes.ToArray();
 						Panel.AllowsOtherFileTypes = asterisk;
 					}
 				}

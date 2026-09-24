@@ -60,11 +60,7 @@ namespace System.Drawing.Text
 				else
 					url = NSUrl.FromFilename (fileName);
 
-				// We will not use CTFontManager.RegisterFontsForUrl (url, CTFontManagerScope.Process);
-				// here.  The reason is that there is no way we can be sure that the font can be created to
-				// to identify the family name afterwards.  So instead we will create a CGFont from a data provider.
-				// create CTFont to obtain the CTFontDescriptor, store family name and font descriptor to be accessed
-				// later.
+				// Keep the descriptor to identify the loaded font family after registration.
 				try {
 					var dataProvider = new CGDataProvider (url.Path);
 					var cgFont = CGFont.CreateFromProvider (dataProvider);
@@ -74,9 +70,8 @@ namespace System.Drawing.Text
 						if (!nativeFontDescriptors.ContainsKey(nativeFont.FamilyName))
 						{
 							nativeFontDescriptors.Add(nativeFont.FamilyName, nativeFont.GetFontDescriptor());
-							NSError error;
-							var registered = CTFontManager.RegisterGraphicsFont(cgFont, out error);
-							if (!registered)
+							var error = CTFontManager.RegisterFontsForUrl(url, CTFontManagerScope.Process);
+							if (error != null)
 							{
 								// If the error code is 105 then the font we are trying to register is already registered
 								// We will not report this as an error.

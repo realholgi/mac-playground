@@ -10,6 +10,10 @@ To test the experiments:
 
 Debug macOS builds omit the hardened runtime so ad-hoc signed native libraries can load. Release builds retain the hardened runtime and require appropriate code signing for distribution.
 
+Trim analysis is disabled for normal, untrimmed builds. Set `PublishTrimmed=true` when preparing a trimmed build to enable the analyzer and review its warnings before shipping.
+
+Some build warnings remain for legacy API experiments (such as WebKit `WebView` and SystemConfiguration reachability) and the WinForms drawing backend. Their modern macOS replacements do not provide equivalent behavior; these warnings are left visible rather than suppressed.
+
 ## System.Drawing
 
 The `System.Drawing` directory contains a fork of the https://github.com/mono/sysdrawing-coregraphics project. We have enhanced the API surface to be compatible enough with System.Drawing to run System.Windows.Forms on top of it. In addition we have implemented some missing APIs and fixed compatibility issues with pixel rounding.

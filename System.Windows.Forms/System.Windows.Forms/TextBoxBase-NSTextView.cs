@@ -41,7 +41,7 @@ namespace System.Windows.Forms
 					textView.VerticallyResizable = true;
 					textView.HorizontallyResizable = true;
 					textView.AutoresizingMask = NSViewResizingMask.WidthSizable | NSViewResizingMask.HeightSizable;
-					textView.TextContainer.ContainerSize = new CGSize(contentSize.Width, float.MaxValue);
+					textView.TextContainer.Size = new CGSize(contentSize.Width, float.MaxValue);
 					textView.TextContainer.WidthTracksTextView = true;
 					textView.RichText = owner.richtext;
 					textView.ShouldUpdateTouchBarItemIdentifiers = TextViewUpdateTouchBarItemIdentifiers;

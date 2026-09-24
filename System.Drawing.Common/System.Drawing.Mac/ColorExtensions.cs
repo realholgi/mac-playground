@@ -125,7 +125,7 @@ namespace System.Drawing.Mac
 			var cgc = color.CGColor; // 10.8+
 			if (cgc != null)
 			{
-				if (cgc.NumberOfComponents == 4 && cgc.ColorSpace.Name == CGColorSpaceNames.SRGB)
+				if (cgc.NumberOfComponents == 4 && cgc.ColorSpace.Name == CGColorSpaceNames.Srgb)
 				{
 					r = (float)cgc.Components[0];
 					g = (float)cgc.Components[1];

@@ -13,7 +13,7 @@ namespace FormsTest
 		void ReadNotificationCenterPreferences()
 		{
 			var plistPath = Path.Combine(MacApi.FoundationStatic.LibraryDirectory, "Preferences", "com.apple.ncprefs.plist");
-			var plist = NSDictionary.FromFile(plistPath);
+			var plist = NSMutableDictionary.FromFile(plistPath);
 			var apps = (NSArray)plist["apps"];
 			for (nuint i = 0; i < apps.Count; ++i)
 			{

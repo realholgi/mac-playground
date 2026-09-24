@@ -7,8 +7,6 @@ namespace FormsTest
 {
 	public partial class MainForm : Form
 	{
-		int round = 5;
-		int counter = 0;
 		//NSBackgroundActivityScheduler activity;
 
 		void ToggleBgActivity()

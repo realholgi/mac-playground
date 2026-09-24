@@ -26,7 +26,7 @@ namespace System.Windows.Forms
 		{
 			using (var context = new ModalDialogContext())
 			{
-				var panel = new NSOpenPanel();
+				using var panel = NSOpenPanel.OpenPanel;
 				panel.CanChooseFiles = false;
 				panel.CanChooseDirectories = true;
 				panel.CanCreateDirectories = ShowNewFolderButton;

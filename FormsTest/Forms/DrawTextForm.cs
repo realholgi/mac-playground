@@ -14,11 +14,6 @@ namespace FormsTest
 		TextBox textBox;
 		Label fontLabel;
 
-		Label alignmentLabel;
-		RadioButton alignmentCenterRadioButton;
-		RadioButton alignmentNearRadioButton;
-		RadioButton alignmentFarRadioButton;
-
 		Label formatFlagsLabel;
 		FlowLayoutPanel formatFlagsPanel;
 		CheckBox tffLeftCheckBox;

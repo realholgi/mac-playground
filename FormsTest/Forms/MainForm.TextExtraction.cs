@@ -65,7 +65,7 @@ namespace FormsTest
 				return;
 
 			var options = new NSAttributedStringDocumentAttributes();
-			var str = new NSAttributedString(data, options.Dictionary, out var attributes, out var error);
+			var str = NSAttributedString.Create(data, options.Dictionary, out var attributes, out var error);
 
 			if (str == null || error != null)
 				return;

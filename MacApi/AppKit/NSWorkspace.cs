@@ -13,28 +13,17 @@ namespace MacApi.AppKit
 			NSRunningApplication? application = null;
 			NSError? error = null;
 
-			if (OperatingSystem.IsMacOSVersionAtLeast(10, 15))
-			{
-				var tcs = new TaskCompletionSource();
-				var configuration = NSWorkspaceOpenConfiguration.Create();
-				configuration.Arguments = args;
-				configuration.Activates = activate;
-				NSWorkspace.SharedWorkspace.OpenUrl(
-					url, configuration, (_application, _error) => {
-						application = _application;
-						error = _error;
-						tcs.SetResult();
-					});
-				tcs.Task.GetAwaiter().GetResult();
-			}
-			else
-			{
-				var options = NSWorkspaceLaunchOptions.Default;
-				var arguments = NSArray.FromStrings(args);
-				var configuration = NSDictionary.FromObjectAndKey(arguments, NSWorkspace.LaunchConfigurationArguments);
-				application = NSWorkspace.SharedWorkspace.OpenUrl(url, options, configuration, out error);
-			}
-
+			var tcs = new TaskCompletionSource();
+			var configuration = NSWorkspaceOpenConfiguration.Create();
+			configuration.Arguments = args;
+			configuration.Activates = activate;
+			NSWorkspace.SharedWorkspace.OpenUrl(
+				url, configuration, (_application, _error) => {
+					application = _application;
+					error = _error;
+					tcs.SetResult();
+				});
+			tcs.Task.GetAwaiter().GetResult();
 			if (error != null)
 				throw new ApplicationException("NSWorkspace failed to open URL: " + url);
 			if (application == null)
@@ -51,9 +40,10 @@ namespace MacApi.AppKit
 			var pipe = new NSPipe();
 
 			task.StandardOutput = pipe;
-			task.LaunchPath = path;
+			task.ExecutableUrl = NSUrl.FromFilename(path);
 			task.Arguments = args;
-			task.Launch();
+			if (!task.Launch(out var error))
+				throw new ApplicationException("NSTask failed to launch: " + error?.LocalizedDescription);
 
 			if (activate)
 			{
@@ -62,7 +52,6 @@ namespace MacApi.AppKit
 				{
 					if (app == null)
 						app = NSRunningApplication.GetRunningApplication(task.ProcessIdentifier);
-
 					if (app != null && app.FinishedLaunching)
 						if (app.Activate(NSApplicationActivationOptions.ActivateIgnoringOtherWindows))
 							break;

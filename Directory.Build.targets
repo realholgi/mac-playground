@@ -2,6 +2,10 @@
   <PropertyGroup>
     <NoWarn>$(NoWarn);CS8632;SYSLIB0011</NoWarn>
   </PropertyGroup>
+
+  <PropertyGroup Condition="'$(PublishTrimmed)' != 'true'">
+    <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
+  </PropertyGroup>
   
   <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0-macos27.0'">
     <NoWarn>$(NoWarn);XCODE_27_0_PREVIEW</NoWarn>

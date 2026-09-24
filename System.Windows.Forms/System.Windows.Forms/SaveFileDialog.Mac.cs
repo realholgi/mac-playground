@@ -59,7 +59,21 @@ namespace System.Windows.Forms
 						ApplyFilter(panel, Filter);
 
 					if (!String.IsNullOrWhiteSpace(FileName))
-						panel.NameFieldStringValue = AdjustExtensionToMatchFilter(FileName, panel.AllowedFileTypes);
+					{
+						var index = Math.Max(0, FilterIndex - 1);
+						if (FilterItems != null && index < FilterItems.Count)
+							panel.NameFieldStringValue = AdjustExtensionToMatchFilter(FileName, FilterItems[index].Extensions);
+						else if (panel.AllowedContentTypes is { Length: > 0 } contentTypes)
+						{
+							var extensions = new List<string>(contentTypes.Length);
+							foreach (var type in contentTypes)
+								if (type.PreferredFilenameExtension is string extension)
+									extensions.Add(extension);
+							panel.NameFieldStringValue = AdjustExtensionToMatchFilter(FileName, extensions);
+						}
+						else
+							panel.NameFieldStringValue = FileName;
+					}
 
 					NSApplication.SharedApplication.BeginInvokeOnMainThread(NSApplication.SharedApplication.Menu.InvokeMenuWillOpenDeep);
 					if (NSModalResponse.OK != (NSModalResponse)(int)panel.RunModal())

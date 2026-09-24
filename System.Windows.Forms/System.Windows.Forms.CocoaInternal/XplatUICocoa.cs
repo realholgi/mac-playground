@@ -451,7 +451,7 @@ namespace System.Windows.Forms {
 
 					// ... but still use mouse click to activate the app if necessary.
 					if (flags.HasFlag(NSMouseFlags.Down) && NSApp.ModalWindow != evt.Window && NSApp.ModalWindow != null && !NSApp.Active)
-						NSApplication.SharedApplication.ActivateIgnoringOtherApps(true);
+						NSApplication.SharedApplication.Activate();
 				}
 
 				NSApp.UpdateWindows();
@@ -860,7 +860,6 @@ namespace System.Windows.Forms {
 				wholeHandle = viewWrapper.Handle;
 				windowWrapper.ContentView = viewWrapper;
 				windowWrapper.InitialFirstResponder = viewWrapper;
-				windowWrapper.SetOneShot(true);
 
 				if (ExStyleSet(cp.ExStyle, WindowExStyles.WS_EX_TRANSPARENT))
 					windowWrapper.IgnoresMouseEvents = true;
@@ -2276,7 +2275,7 @@ namespace System.Windows.Forms {
 			if (NSApplication.SharedApplication.ActivationPolicy != NSApplicationActivationPolicy.Regular)
 			{
 				NSApplication.SharedApplication.ActivationPolicy = NSApplicationActivationPolicy.Regular;
-				NSApplication.SharedApplication.ActivateIgnoringOtherApps(true);
+				NSApplication.SharedApplication.Activate();
 				NSProcessInfo.ProcessInfo.ProcessName = Application.ProductName;
 			}
 

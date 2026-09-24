@@ -256,7 +256,6 @@ namespace FormsTest
 
 		public void PrintSettings()
 		{
-			var n = NSLocale.CurrentLocaleDidChangeNotification;
 			form.WriteLine($"PrintSettings");
 
 			var center = UNUserNotificationCenter.Current;
@@ -357,7 +356,7 @@ namespace FormsTest
 		public void AddTimeSensitiveNotification()
 		{
 			form.WriteLine($"AddNotificationWithCustomSound");
-			AddRequest(CategoryID.Simple, "Time Sensitive", "No actions", null, null, UNNotificationInterruptionLevel.TimeSensitive) ;
+			AddRequest(CategoryID.Simple, "Time Sensitive", "No actions", null, null, UNNotificationInterruptionLevel.TimeSensitive2) ;
 		}
 
 		public void AddTextInputNotification()
@@ -431,7 +430,7 @@ namespace FormsTest
 			var identifier = notification.Request.Identifier;
 			form.WriteLine($"Identifier: {identifier}");
 
-			completionHandler(UNNotificationPresentationOptions.Alert);
+			completionHandler(UNNotificationPresentationOptions.Banner);
 		}
 
 		public override void DidReceiveNotificationResponse(UNUserNotificationCenter center, UNNotificationResponse response, Action completionHandler)

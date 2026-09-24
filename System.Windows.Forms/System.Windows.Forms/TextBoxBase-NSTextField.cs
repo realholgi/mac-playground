@@ -302,7 +302,7 @@ namespace System.Windows.Forms
 				container.LineFragmentPadding = 2;
 				manager.TypesetterBehavior = NSTypesetterBehavior.Specific_10_2_WithCompatibility;
 
-				container.ContainerSize = bounds.Size;
+				container.Size = bounds.Size;
 				storage.BeginEditing();
 				storage.SetString(textField.AttributedStringValue);
 				storage.EndEditing();
