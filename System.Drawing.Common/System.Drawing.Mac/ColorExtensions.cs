@@ -51,6 +51,8 @@ namespace System.Drawing.Mac
 		public static NSColor AsNSColor(this Color c)
 		{
 			if (c.IsSystemColor) {
+				// Generic WinForms colors have no control-specific context for AppKit's replacement colors.
+#pragma warning disable CA1422
 				switch (c.ToKnownColor()) {
 					case KnownColor.ActiveBorder: return NSColor.WindowFrame;
 					case KnownColor.ActiveCaption: return NSColor.Grid;
@@ -83,6 +85,7 @@ namespace System.Drawing.Mac
 					case KnownColor.ButtonShadow: return NSColor.ControlShadow;
 				}
 			}
+#pragma warning restore CA1422
 
 			if (c.IsNamedColor) {
                 if (c.Name == textBackgroundColor.Name) {

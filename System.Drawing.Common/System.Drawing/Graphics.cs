@@ -134,6 +134,8 @@ namespace System.Drawing {
 			Graphics g;
 			var obj = ObjCRuntime.Runtime.GetNSObject(hwnd);
 			var view = obj as NSView;
+			// FromHwnd must also draw synchronously outside an NSView.DrawRect callback.
+#pragma warning disable CA1422
 			if (view == null && obj is NSWindow && ((NSWindow)obj).GraphicsContext != null) {
 				g = new Graphics(((NSWindow)obj).GraphicsContext);
 			} else if (NSView.FocusView () == view) {
@@ -152,6 +154,7 @@ namespace System.Drawing {
 			} else {
 				return new Graphics(DefaultContext);
 			}
+#pragma warning restore CA1422
 
 			if (client) {
 				if (view is IClientView clientView) {
@@ -223,7 +226,10 @@ namespace System.Drawing {
 
 #if __MACOS__
 				if (focusedView != null) {
+					// Balance the legacy focus lock acquired by FromHwnd.
+#pragma warning disable CA1422
 					focusedView.UnlockFocus ();
+#pragma warning restore CA1422
 					focusedView = null;
 				}
 #endif
