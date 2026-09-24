@@ -10,14 +10,14 @@ namespace MacApi.Posix
 
         public static UInt64 GetMaxNumberOfOpenFiles()
         {
-            var limit = new rlimit();
+            var limit = new ResourceLimit();
             getrlimit((int)RLimit.NoFile, ref limit);
             return limit.cur;
         }
 
 		public static bool SetMaxNumberOfOpenFiles(UInt64 value)
 		{
-			var limit = new rlimit();
+			var limit = new ResourceLimit();
 			getrlimit((int)RLimit.NoFile, ref limit);
 			limit.cur = value;
 			return 0 != setrlimit((int)RLimit.NoFile, ref limit);
@@ -25,7 +25,7 @@ namespace MacApi.Posix
 
 		public static void SetMaxNumberOfOpenFilesClosestTo(UInt64 value)
 		{
-			var limit = new rlimit();
+			var limit = new ResourceLimit();
 			getrlimit((int)RLimit.NoFile, ref limit);
 
 			UInt64 min = limit.cur, max = value, mid = 0;
@@ -106,17 +106,17 @@ namespace MacApi.Posix
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        public struct rlimit
+        public struct ResourceLimit
         {
             public UInt64 cur;
             public UInt64 max;
         }
 
 		[DllImport(Constants.libcLibrary, SetLastError = true)]
-        public static extern int getrlimit(int resource, ref rlimit l);
+        public static extern int getrlimit(int resource, ref ResourceLimit l);
 
 		[DllImport(Constants.libcLibrary, SetLastError = true)]
-        public static extern int setrlimit(int resource, ref rlimit l);
+        public static extern int setrlimit(int resource, ref ResourceLimit l);
 
 		[DllImport(Constants.libcLibrary, SetLastError = true)]
         public static extern int getpid();

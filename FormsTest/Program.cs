@@ -133,7 +133,7 @@ namespace FormsTest
 
 		static void MaxOpenFiles(bool change)
 		{
-			var lim = new LibC.rlimit();
+			var lim = new LibC.ResourceLimit();
 			var ok = LibC.getrlimit((int)LibC.RLimit.NoFile, ref lim);
 			Console.WriteLine($"getrlimit({lim.cur}, {lim.max}) => {ok}");
 
