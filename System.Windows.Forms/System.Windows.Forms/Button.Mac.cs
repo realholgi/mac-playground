@@ -7,14 +7,31 @@ namespace System.Windows.Forms
 {
 	public partial class Button : IMacNativeControl
 	{
-		NSButton button;
+		sealed class DialogButton : NSButton
+		{
+			internal bool AcceptsReturn { get; set; }
+
+			public override bool PerformKeyEquivalent(NSEvent e)
+			{
+				if (AcceptsReturn && Enabled && e.Type == NSEventType.KeyDown &&
+				    e.CharactersIgnoringModifiers == "\r" &&
+				    (e.ModifierFlags & (NSEventModifierMask.CommandKeyMask |
+				        NSEventModifierMask.ControlKeyMask | NSEventModifierMask.AlternateKeyMask)) == 0) {
+					PerformClick(this);
+					return true;
+				}
+				return base.PerformKeyEquivalent(e);
+			}
+		}
+
+		DialogButton button;
 		bool is_cancel_button;
 
 		public NSView CreateView()
 		{
 			var i = Image;
 
-			button = new NSButton();
+			button = new DialogButton();
 			/*button.AttributedTitle = GetAttributedString(Text, '&', b.font, b.TextAlign);
 			button.Alignment = TextAlign.ToNSTextAlignment();
 			cell.Highlighted = b.ButtonState == ButtonState.Pushed;
@@ -30,7 +47,7 @@ namespace System.Windows.Forms
 			button.Enabled = Enabled;
 			button.Image = i == null ? null : i.ToNSImage();
 			button.ImagePosition = NSCellImagePosition.ImageLeft;
-			button.KeyEquivalent = is_cancel_button ? "\u001b" : IsDefault ? "\r" : "";
+			UpdateKeyEquivalent();
 
 			return button;
 		}
@@ -105,11 +122,18 @@ namespace System.Windows.Forms
 			}
 		}
 
+		void UpdateKeyEquivalent()
+		{
+			if (button == null)
+				return;
+			button.KeyEquivalent = is_cancel_button ? "\u001b" : IsDefault ? "\r" : "";
+			button.AcceptsReturn = is_cancel_button && IsDefault;
+		}
+
 		internal void SetCancelButton(bool value)
 		{
 			is_cancel_button = value;
-			if (button != null)
-				button.KeyEquivalent = value ? "\u001b" : IsDefault ? "\r" : "";
+			UpdateKeyEquivalent();
 		}
 
 		internal protected override bool IsDefault
@@ -121,8 +145,7 @@ namespace System.Windows.Forms
 			set
 			{
 				base.IsDefault = value;
-				if (button != null)
-					button.KeyEquivalent = is_cancel_button ? "\u001b" : value ? "\r" : "";
+				UpdateKeyEquivalent();
 			}
 		}
 
