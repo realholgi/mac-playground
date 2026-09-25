@@ -8,6 +8,7 @@ namespace System.Windows.Forms
 	public partial class Button : IMacNativeControl
 	{
 		NSButton button;
+		bool is_cancel_button;
 
 		public NSView CreateView()
 		{
@@ -29,8 +30,7 @@ namespace System.Windows.Forms
 			button.Enabled = Enabled;
 			button.Image = i == null ? null : i.ToNSImage();
 			button.ImagePosition = NSCellImagePosition.ImageLeft;
-			if (IsDefault)
-				button.KeyEquivalent = "\r";
+			button.KeyEquivalent = is_cancel_button ? "\u001b" : IsDefault ? "\r" : "";
 
 			return button;
 		}
@@ -105,6 +105,13 @@ namespace System.Windows.Forms
 			}
 		}
 
+		internal void SetCancelButton(bool value)
+		{
+			is_cancel_button = value;
+			if (button != null)
+				button.KeyEquivalent = value ? "\u001b" : IsDefault ? "\r" : "";
+		}
+
 		internal protected override bool IsDefault
 		{
 			get
@@ -115,7 +122,7 @@ namespace System.Windows.Forms
 			{
 				base.IsDefault = value;
 				if (button != null)
-					button.KeyEquivalent = value ? "\r" : "";
+					button.KeyEquivalent = is_cancel_button ? "\u001b" : value ? "\r" : "";
 			}
 		}
 

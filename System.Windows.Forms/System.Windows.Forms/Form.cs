@@ -606,9 +606,17 @@ namespace System.Windows.Forms {
 			}
 
 			set {
+#if MAC
+				if (cancel_button is Button previous)
+					previous.SetCancelButton (false);
+#endif
 				cancel_button = value;
 				if (cancel_button != null && cancel_button.DialogResult == DialogResult.None)
 					cancel_button.DialogResult = DialogResult.Cancel;
+#if MAC
+				if (cancel_button is Button current)
+					current.SetCancelButton (true);
+#endif
 			}
 		}
 
@@ -2730,7 +2738,7 @@ namespace System.Windows.Forms {
 			}
 
 			bool validate_cancel = false;
-			if (!suppress_closing_events)
+			if (!suppress_closing_events && DialogResult != DialogResult.Cancel)
 				validate_cancel = !ValidateChildren ();
 
 			if (suppress_closing_events || 
