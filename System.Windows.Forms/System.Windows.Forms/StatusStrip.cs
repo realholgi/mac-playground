@@ -41,6 +41,7 @@ namespace System.Windows.Forms
 		
 		public StatusStrip ()
 		{
+			native_rendering = false;
 			SetStyle (ControlStyles.ResizeRedraw, true);
 			
 			base.CanOverflow = false;
