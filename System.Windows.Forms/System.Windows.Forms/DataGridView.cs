@@ -4486,7 +4486,8 @@ namespace System.Windows.Forms {
 			if (hitTest.Type == DataGridViewHitTestType.Cell) {
 				row = rows [hitTest.RowIndex];
 				cell = row.Cells [hitTest.ColumnIndex];
-				SetCurrentCellAddressCore (cell.ColumnIndex, cell.RowIndex, false, true, true);
+				if (!SetCurrentCellAddressCore (cell.ColumnIndex, cell.RowIndex, false, true, true))
+					return;
 				cellBounds = GetCellDisplayRectangle (hitTest.ColumnIndex, hitTest.RowIndex, false);
 				OnCellMouseDown (new DataGridViewCellMouseEventArgs (hitTest.ColumnIndex, hitTest.RowIndex, e.X - cellBounds.X, e.Y - cellBounds.Y, e));
 				OnCellClick (new DataGridViewCellEventArgs (hitTest.ColumnIndex, hitTest.RowIndex));
@@ -6318,7 +6319,6 @@ namespace System.Windows.Forms {
 			}
 
 			if (!SetCurrentCellAddressCore (x, y, true, false, false)) {
-				ClearSelection ();
 				return;
 			}
 			if (x == -1 && y == -1) {
