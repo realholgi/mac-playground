@@ -5738,6 +5738,14 @@ namespace System.Windows.Forms {
 						if (new_row_editing && currentCell.RowIndex == NewRowIndex)
 							CancelEdit ();
 					}
+					if (cell != null && currentCell.RowIndex != cell.RowIndex) {
+						DataGridViewCellCancelEventArgs rowValidation = new DataGridViewCellCancelEventArgs (
+							currentCell.ColumnIndex, currentCell.RowIndex);
+						OnRowValidating (rowValidation);
+						if (rowValidation.Cancel)
+							return false;
+						OnRowValidated (new DataGridViewCellEventArgs (currentCell.ColumnIndex, currentCell.RowIndex));
+					}
 					OnCellLeave (new DataGridViewCellEventArgs(currentCell.ColumnIndex, currentCell.RowIndex));
 					OnRowLeave (new DataGridViewCellEventArgs (currentCell.ColumnIndex, currentCell.RowIndex));
 				}
