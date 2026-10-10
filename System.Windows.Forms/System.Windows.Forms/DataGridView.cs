@@ -84,7 +84,6 @@ namespace System.Windows.Forms {
 		private DataGridViewCell firstDisplayedCell;
 		private int firstDisplayedScrollingColumnHiddenWidth;
 		private int firstDisplayedScrollingColumnIndex;
-		private int firstDisplayedScrollingRowIndex;
 		private Color gridColor = Color.FromKnownColor(KnownColor.ControlDark);
 		private int horizontalScrollingOffset;
 		private DataGridViewCell hover_cell = null;
@@ -861,8 +860,24 @@ namespace System.Windows.Forms {
 		[Browsable (false)]
 		[DesignerSerializationVisibility (DesignerSerializationVisibility.Hidden)]
 		public int FirstDisplayedScrollingRowIndex {
-			get { return firstDisplayedScrollingRowIndex; }
-			set { firstDisplayedScrollingRowIndex = value; }
+			get { return Rows.Count == 0 ? -1 : first_row_index; }
+			set {
+				if (value < 0 || value >= Rows.Count)
+					throw new ArgumentOutOfRangeException ("value");
+				if (!Rows[value].Visible || Rows[value].Frozen)
+					throw new InvalidOperationException ("The row must be visible and not frozen.");
+				if (value == first_row_index)
+					return;
+
+				RefreshScrollBars ();
+				int offset = 0;
+				for (int index = 0; index < value; index++) {
+					if (Rows[index].Visible)
+						offset += Rows[index].Height;
+				}
+				verticalScrollBar.SafeValueSet (offset);
+				OnVScrollBarScroll (this, new ScrollEventArgs (ScrollEventType.ThumbPosition, verticalScrollBar.Value));
+			}
 		}
 
 		[Browsable (false)]
@@ -4829,7 +4844,7 @@ namespace System.Windows.Forms {
 			}
 			
 			// Reset all not displayed rows to !Displayed
-			for (int i = 0; i < first_row_index; i++)
+			for (int i = 0; i < Rows.Count; i++)
 				GetRowInternal (i).DisplayedInternal = false;
 			
 			// Draw rows

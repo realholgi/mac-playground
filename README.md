@@ -36,6 +36,11 @@ The anchored-control resize regression can be checked with
 It verifies that a label anchored to all four sides grows and shrinks with a
 `SplitContainer` panel, including while the panel suspends layout during resize.
 
+`DataGridView.FirstDisplayedScrollingRowIndex` scrolls through the vertical
+scrollbar without changing the current cell or selection. Its getter follows
+the actual viewport, and row `Displayed` flags are refreshed when painting so
+rows scrolled out of view are no longer reported as visible.
+
 ## License
 
 The code is released under the MIT X11 license unless noted otherwise in a specific source file. Any changes in this repository to the original code are published under the MIT X11 license.
