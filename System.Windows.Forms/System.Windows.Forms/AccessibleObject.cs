@@ -26,9 +26,7 @@
 
 // NOT COMPLETE
 
-/*#if !MAC
 using Accessibility;
-#endif*/
 using System.Drawing;
 using System.Globalization;
 using System.Reflection;
@@ -36,11 +34,7 @@ using System.Runtime.InteropServices;
 
 namespace System.Windows.Forms {
 	[ComVisible(true)]
-//#if MAC
-	public class AccessibleObject : MarshalByRefObject, IReflect {
-/*#else
-	public class AccessibleObject : StandardOleMarshalObject, IReflect, IAccessible {
-#endif*/
+	public class AccessibleObject : MarshalByRefObject, IReflect, IAccessible {
 		#region Private Variables
 		internal string		name;
 		internal string		value;
@@ -76,7 +70,7 @@ namespace System.Windows.Forms {
 		#region Public Instance Properties
 		public virtual Rectangle Bounds {
 			get {
-				return owner.Bounds;
+				return owner == null ? Rectangle.Empty : owner.Parent?.RectangleToScreen(owner.Bounds) ?? owner.Bounds;
 			}
 		}
 
@@ -181,7 +175,7 @@ namespace System.Windows.Forms {
 		}
 
 		public virtual AccessibleObject GetFocused() {
-			if (owner.Focused) {
+			if (owner?.Focused == true) {
 				return owner.AccessibilityObject;
 			}
 
@@ -203,6 +197,8 @@ namespace System.Windows.Forms {
 		}
 
 		public virtual AccessibleObject HitTest(int x, int y) {
+			if (owner == null)
+				return null;
 			Control result;
 
 			result = FindHittestControl(owner, x, y);
@@ -216,6 +212,8 @@ namespace System.Windows.Forms {
 
 		public virtual AccessibleObject Navigate(AccessibleNavigation navdir) {
 			int	index;
+			if (owner == null)
+				return null;
 
 			// I'm not throwing exceptions if an object doesn't exist in the specified direction
 			// Might not be too helpful to a blind dude trying to navigate. Instead we return
@@ -324,7 +322,7 @@ namespace System.Windows.Forms {
 
 		public virtual void Select(AccessibleSelection flags) {
 			if ((flags & AccessibleSelection.TakeFocus) != 0){
-				owner.Focus();
+				owner?.Focus();
 			}
 			return;
 		}
@@ -347,7 +345,7 @@ namespace System.Windows.Forms {
 			if (parent != null) {
 				for (int i=0; i < parent.Controls.Count; i++) {
 					child = parent.Controls[i];
-					if ((child.AccessibilityObject.state & AccessibleStates.Focused) != 0) {
+					if (child.Focused) {
 						return child.AccessibilityObject;
 					}
 
@@ -470,99 +468,47 @@ namespace System.Windows.Forms {
 		#endregion	// IReflection Methods and Properties
 
 		#region IAccessible Methods and Properties
-/*#if !MAC
-		void IAccessible.accDoDefaultAction(object childID) {
-			throw new NotImplementedException();
-		}
-
-		int IAccessible.accChildCount {
-			get {
-				throw new NotImplementedException();
-			}
-		}
-
-		object IAccessible.accFocus {
-			get {
-				throw new NotImplementedException();
-			}
-		}
-
-		object IAccessible.accHitTest(int xLeft, int yTop) {
-			throw new NotImplementedException();
-		}
+		int IAccessible.accChildCount => Math.Max(0, GetChildCount());
+		object IAccessible.accFocus => GetFocused();
+		object IAccessible.accParent => Parent;
+		object IAccessible.accSelection => GetSelected();
+		void IAccessible.accDoDefaultAction(object childID) => GetAccessibleChild(childID).DoDefaultAction();
+		object IAccessible.accHitTest(int xLeft, int yTop) => HitTest(xLeft, yTop);
+		object IAccessible.accNavigate(int navDir, object childID) => GetAccessibleChild(childID).Navigate((AccessibleNavigation)navDir);
+		void IAccessible.accSelect(int flagsSelect, object childID) => GetAccessibleChild(childID).Select((AccessibleSelection)flagsSelect);
+		object IAccessible.get_accChild(object childID) => GetAccessibleChild(childID);
+		string IAccessible.get_accDefaultAction(object childID) => GetAccessibleChild(childID).DefaultAction;
+		string IAccessible.get_accDescription(object childID) => GetAccessibleChild(childID).Description;
+		string IAccessible.get_accHelp(object childID) => GetAccessibleChild(childID).Help;
+		int IAccessible.get_accHelpTopic(out string pszHelpFile, object childID) => GetAccessibleChild(childID).GetHelpTopic(out pszHelpFile);
+		string IAccessible.get_accKeyboardShortcut(object childID) => GetAccessibleChild(childID).KeyboardShortcut;
+		string IAccessible.get_accName(object childID) => GetAccessibleChild(childID).Name;
+		object IAccessible.get_accRole(object childID) => (int)GetAccessibleChild(childID).Role;
+		object IAccessible.get_accState(object childID) => (int)GetAccessibleChild(childID).State;
+		string IAccessible.get_accValue(object childID) => GetAccessibleChild(childID).Value;
+		void IAccessible.set_accName(object childID, string newName) => GetAccessibleChild(childID).Name = newName;
+		void IAccessible.set_accValue(object childID, string newValue) => GetAccessibleChild(childID).Value = newValue;
 
 		void IAccessible.accLocation(out int pxLeft, out int pyTop, out int pcxWidth, out int pcyHeight, object childID) {
-			throw new NotImplementedException();
+			var bounds = GetAccessibleChild(childID).Bounds;
+			pxLeft = bounds.Left;
+			pyTop = bounds.Top;
+			pcxWidth = bounds.Width;
+			pcyHeight = bounds.Height;
 		}
 
-		object IAccessible.accNavigate(int navDir, object childID) {
-			throw new NotImplementedException();
-		}
-
-		object IAccessible.accParent {
-			get {
-				throw new NotImplementedException();
+		private AccessibleObject GetAccessibleChild(object childID) {
+			if (childID == Type.Missing)
+				return this;
+			if (childID is int id && id >= 0) {
+				if (id == 0)
+					return this;
+				var child = GetChild(id - 1);
+				if (child != null)
+					return child;
 			}
+			throw new ArgumentException("The child ID must identify this object or an existing child.", nameof(childID));
 		}
-
-                void IAccessible.accSelect(int flagsSelect, object childID) {
-			throw new NotImplementedException();
-                }
-
-                object IAccessible.accSelection {
-                        get {
-				throw new NotImplementedException();
-			}
-		}
-
-		object IAccessible.get_accChild(object childID) {
-			throw new NotImplementedException();
-		}
-
-		string IAccessible.get_accDefaultAction(object childID) {
-			throw new NotImplementedException();
-		}
-
-		string IAccessible.get_accDescription(object childID) {
-			throw new NotImplementedException();
-		}
-
-		string IAccessible.get_accHelp(object childID) {
-			throw new NotImplementedException();
-		}
-
-		int IAccessible.get_accHelpTopic(out string pszHelpFile,object childID) {
-			throw new NotImplementedException();
-		}
-
-		string IAccessible.get_accKeyboardShortcut(object childID) {
-			throw new NotImplementedException();
-		}
-
-		string IAccessible.get_accName(object childID) {
-			throw new NotImplementedException();
-		}
-
-		object IAccessible.get_accRole(object childID) {
-			throw new NotImplementedException();
-		}
-
-		object IAccessible.get_accState(object childID) {
-			throw new NotImplementedException();
-		}
-
-		string IAccessible.get_accValue(object childID) {
-			throw new NotImplementedException();
-		}
-
-		void IAccessible.set_accName(object childID, string newName) {
-			throw new NotImplementedException();
-		}
-
-		void IAccessible.set_accValue(object childID, string newValue) {
-			throw new NotImplementedException();
-                }
-		#endif*/
 		#endregion	// IAccessible Methods and Properties
 	}
 }

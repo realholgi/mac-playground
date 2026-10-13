@@ -23,7 +23,11 @@ public sealed class TextAndDateTests
             Application.DoEvents();
             var textBox = (TextBox)form.Controls.Find("textbox1", true).Single();
             textBox.Focus();
-            Application.DoEvents();
+            Assert.That(() =>
+            {
+                Application.DoEvents();
+                return AppKit.NSApplication.SharedApplication.Active && textBox.Focused;
+            }, Is.True.After(2000, 10), "The text box must own native focus before editing its selection.");
             textBox.Text = "alpha beta gamma";
             textBox.Select(6, 4);
 

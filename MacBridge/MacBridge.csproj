@@ -5,6 +5,10 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DisableExtraReferences>true</DisableExtraReferences>
     <LangVersion>latest</LangVersion>
+    <SignAssembly>true</SignAssembly>
+    <PublicSign>true</PublicSign>
+    <AssemblyOriginatorKeyFile>..\build\System.Drawing.Common.PublicKey.snk</AssemblyOriginatorKeyFile>
+    <ApiCompatPublicKey>$(MacBridgePublicKey)</ApiCompatPublicKey>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\..\..\WinApi\GdiPlus.Structs.cs">

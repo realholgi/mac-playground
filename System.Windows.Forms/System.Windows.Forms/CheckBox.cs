@@ -289,7 +289,7 @@ namespace System.Windows.Forms {
 		protected override AccessibleObject CreateAccessibilityInstance() {
 			AccessibleObject	ao;
 
-			ao = base.CreateAccessibilityInstance ();
+			ao = new CheckBoxAccessibleObject(this);
 			ao.role = AccessibleRole.CheckButton;
 
 			return ao;

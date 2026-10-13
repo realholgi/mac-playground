@@ -7,6 +7,11 @@
   <ItemGroup>
     <ProjectReference Include="../../System.Windows.Forms/System.Windows.Forms.csproj" />
     <PackageReference Include="NUnitLite" Version="5.0.0" />
+    <PackageReference Include="Microsoft.WindowsDesktop.App.Runtime.win-x64" Version="8.0.31" PrivateAssets="All" GeneratePathProperty="true" ExcludeAssets="All" />
+    <Reference Include="Accessibility">
+      <HintPath>$(PkgMicrosoft_WindowsDesktop_App_Runtime_win-x64)/runtimes/win-x64/lib/net8.0/Accessibility.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="../../FormsTest/Forms/TextBoxForm.cs" Link="Forms/TextBoxForm.cs" />

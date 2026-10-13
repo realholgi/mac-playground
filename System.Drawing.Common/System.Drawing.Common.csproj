@@ -9,7 +9,7 @@
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
     <LangVersion>preview</LangVersion>
-    <AssemblyVersion>5.0.0</AssemblyVersion>
+    <AssemblyVersion>8.0.0</AssemblyVersion>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -22,14 +22,17 @@
     <PackageReference Include="Microsoft.NETCore.App.Ref" Version="8.0.31" PrivateAssets="All" GeneratePathProperty="true" ExcludeAssets="All" />
   </ItemGroup>
   <PropertyGroup>
-    <ApiCompatExcludeAttributeList>..\ApiCompatExcludeAttributes.txt</ApiCompatExcludeAttributeList>
-    <ContractDependencyPaths>$(PkgMicrosoft_NETCore_App_Ref)\ref\net8.0</ContractDependencyPaths>
+    <ApiCompatValidateAssemblies>true</ApiCompatValidateAssemblies>
+    <ApiCompatContractAssembly>$(PkgMicrosoft_WindowsDesktop_App_Ref)\ref\net8.0\System.Drawing.Common.dll</ApiCompatContractAssembly>
+    <ApiCompatUseImplementationReferencesForContract>false</ApiCompatUseImplementationReferencesForContract>
+    <ApiCompatEnableRuleAttributesMustMatch>true</ApiCompatEnableRuleAttributesMustMatch>
   </PropertyGroup>
   <ItemGroup>
-    <ResolvedMatchingContract Include="$(PkgMicrosoft_WindowsDesktop_App_Ref)\ref\net8.0\System.Drawing.Common.dll" />
+    <ApiCompatContractAssemblyReferences Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\net8.0\*.dll;$(PkgMicrosoft_WindowsDesktop_App_Ref)\ref\net8.0\*.dll" />
+    <ApiCompatExcludeAttributesFile Include="..\ApiCompatExcludeAttributes.txt" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.ApiCompat" Version="8.0.0-beta.24170.6" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.DotNet.ApiCompat.Task" Version="10.0.401" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>
@@ -51,8 +54,6 @@
     <Compile Include="System.Drawing.Printing\*.cs" />
   </ItemGroup>
   <ItemGroup>
-    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-      <_Parameter1>MacBridge</_Parameter1>
-    </AssemblyAttribute>
+    <InternalsVisibleTo Include="MacBridge" Key="$(MacBridgePublicKey)" />
   </ItemGroup>
 </Project>
