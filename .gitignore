@@ -399,3 +399,9 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# Source build helpers must override global build-directory ignores.
+!/build/
+/build/*
+!/build/ApiCompat.targets
+!/build/System.Drawing.Common.PublicKey.snk

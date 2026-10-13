@@ -1,0 +1,142 @@
+<Project>
+  <PropertyGroup>
+    <_ApiCompatOriginalContractAssembly>$(ApiCompatContractAssembly)</_ApiCompatOriginalContractAssembly>
+    <_ApiCompatPublicContractAssembly>$([MSBuild]::NormalizePath('$(MSBuildProjectDirectory)', '$(IntermediateOutputPath)', 'apicompat', '$(AssemblyName).dll'))</_ApiCompatPublicContractAssembly>
+    <SignAssembly>true</SignAssembly>
+    <PublicSign>true</PublicSign>
+    <AssemblyOriginatorKeyFile>$([MSBuild]::NormalizePath('$(MSBuildProjectDirectory)', '$(IntermediateOutputPath)', 'apicompat', '$(AssemblyName).PublicKey.snk'))</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Mono.Cecil" Version="0.11.6" PrivateAssets="All" ExcludeAssets="All" GeneratePathProperty="true" />
+  </ItemGroup>
+
+  <UsingTask TaskName="PreparePublicApiCompatContract" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)/Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <ContractAssembly ParameterType="System.String" Required="true" />
+      <ReferenceAssemblies ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+      <OutputAssembly ParameterType="System.String" Required="true" />
+      <KeyFile ParameterType="System.String" Required="true" />
+      <TaskDefinitionFile ParameterType="System.String" Required="true" />
+      <ProjectFile ParameterType="System.String" Required="true" />
+      <PublicKey ParameterType="System.String" Output="true" />
+    </ParameterGroup>
+    <Task>
+      <Reference Include="$(PkgMono_Cecil)/lib/netstandard2.0/Mono.Cecil.dll" />
+      <Code Type="Class" Language="cs"><![CDATA[
+using System;
+using System.IO;
+using System.Linq;
+using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
+using Mono.Cecil;
+
+public sealed class PreparePublicApiCompatContract : Task
+{
+    [Required] public string ContractAssembly { get; set; }
+    [Required] public ITaskItem[] ReferenceAssemblies { get; set; }
+    [Required] public string OutputAssembly { get; set; }
+    [Required] public string KeyFile { get; set; }
+    [Required] public string TaskDefinitionFile { get; set; }
+    [Required] public string ProjectFile { get; set; }
+    [Output] public string PublicKey { get; set; }
+
+    public override bool Execute()
+    {
+        try
+        {
+            using (var resolver = new DefaultAssemblyResolver())
+            {
+                foreach (var directory in ReferenceAssemblies.Select(item => Path.GetDirectoryName(item.ItemSpec)).Distinct())
+                    resolver.AddSearchDirectory(directory);
+                resolver.AddSearchDirectory(Path.GetDirectoryName(ContractAssembly));
+                using (var contract = AssemblyDefinition.ReadAssembly(ContractAssembly, new ReaderParameters { AssemblyResolver = resolver }))
+                {
+                    var key = contract.Name.PublicKey;
+                    if (key.Length == 0)
+                        throw new InvalidOperationException("The reference contract has no public signing key.");
+                    var hex = new char[key.Length * 2];
+                    const string digits = "0123456789ABCDEF";
+                    for (var index = 0; index < key.Length; index++)
+                    {
+                        hex[index * 2] = digits[key[index] >> 4];
+                        hex[index * 2 + 1] = digits[key[index] & 15];
+                    }
+                    PublicKey = new string(hex);
+                    Directory.CreateDirectory(Path.GetDirectoryName(KeyFile));
+                    if (!File.Exists(KeyFile) || !File.ReadAllBytes(KeyFile).SequenceEqual(key))
+                        File.WriteAllBytes(KeyFile, key);
+
+                    var outputTime = File.GetLastWriteTimeUtc(OutputAssembly);
+                    if (!File.Exists(OutputAssembly) || outputTime < File.GetLastWriteTimeUtc(ContractAssembly)
+                        || outputTime < File.GetLastWriteTimeUtc(TaskDefinitionFile)
+                        || outputTime < File.GetLastWriteTimeUtc(ProjectFile))
+                    {
+                        foreach (var type in contract.MainModule.GetTypes().Where(IsExternallyVisible))
+                        {
+                            for (var index = type.Interfaces.Count - 1; index >= 0; index--)
+                            {
+                                var implemented = type.Interfaces[index];
+                                if (!IsExternallyVisible(implemented.InterfaceType))
+                                {
+                                    Log.LogMessage(MessageImportance.Normal, "ApiCompat public contract: omitting inaccessible interface {0} from {1}.", implemented.InterfaceType.FullName, type.FullName);
+                                    type.Interfaces.RemoveAt(index);
+                                }
+                            }
+                        }
+                        Directory.CreateDirectory(Path.GetDirectoryName(OutputAssembly));
+                        contract.Write(OutputAssembly);
+                    }
+                }
+            }
+            return true;
+        }
+        catch (Exception exception)
+        {
+            Log.LogErrorFromException(exception, true);
+            return false;
+        }
+    }
+
+    private static bool IsExternallyVisible(TypeReference type)
+    {
+        if (type is GenericParameter)
+            return true;
+        var generic = type as GenericInstanceType;
+        if (generic != null)
+            return IsExternallyVisible(generic.ElementType) && generic.GenericArguments.All(IsExternallyVisible);
+        var definition = type.Resolve();
+        if (definition == null)
+            throw new InvalidOperationException("Cannot resolve contract interface type " + type.FullName + ".");
+        return IsExternallyVisible(definition);
+    }
+
+    private static bool IsExternallyVisible(TypeDefinition type)
+    {
+        if (!type.IsNested)
+            return type.IsPublic;
+        return (type.IsNestedPublic || type.IsNestedFamily || type.IsNestedFamilyOrAssembly)
+            && IsExternallyVisible(type.DeclaringType);
+    }
+}
+      ]]></Code>
+    </Task>
+  </UsingTask>
+
+  <Target Name="PrepareApiCompatPublicContract"
+          BeforeTargets="ResolveKeySource;AddInternalsVisibleTo;GetApiCompatContractAssembly;PrepareInputsForApiCompatValidateAssemblies;ApiCompatAnnotateTargetPathWithTargetPlatformMoniker"
+          Condition="'$(IsCrossTargetingBuild)' != 'true'"
+          DependsOnTargets="ResolvePackageAssets">
+    <PreparePublicApiCompatContract ContractAssembly="$(_ApiCompatOriginalContractAssembly)"
+                                    ReferenceAssemblies="@(ApiCompatContractAssemblyReferences)"
+                                    OutputAssembly="$(_ApiCompatPublicContractAssembly)"
+                                    KeyFile="$(AssemblyOriginatorKeyFile)"
+                                    TaskDefinitionFile="$(MSBuildThisFileFullPath)"
+                                    ProjectFile="$(MSBuildProjectFullPath)">
+      <Output TaskParameter="PublicKey" PropertyName="ApiCompatPublicKey" />
+    </PreparePublicApiCompatContract>
+    <PropertyGroup>
+      <ApiCompatContractAssembly>$(_ApiCompatPublicContractAssembly)</ApiCompatContractAssembly>
+    </PropertyGroup>
+  </Target>
+</Project>
