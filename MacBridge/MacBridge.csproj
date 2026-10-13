@@ -7,7 +7,7 @@
     <LangVersion>latest</LangVersion>
     <SignAssembly>true</SignAssembly>
     <PublicSign>true</PublicSign>
-    <AssemblyOriginatorKeyFile>..\build\System.Drawing.Common.PublicKey.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>..\eng\System.Drawing.Common.PublicKey.snk</AssemblyOriginatorKeyFile>
     <ApiCompatPublicKey>$(MacBridgePublicKey)</ApiCompatPublicKey>
   </PropertyGroup>
   <ItemGroup>

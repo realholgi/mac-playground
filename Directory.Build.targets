@@ -53,5 +53,5 @@
       <InternalsVisibleTo Include="$(AssemblyName).Test" Key="$(ApiCompatPublicKey)" />
     </ItemGroup>
   </Target>
-  <Import Project="$(MSBuildThisFileDirectory)build/ApiCompat.targets" Condition="'$(ApiCompatContractAssembly)' != ''" />
+  <Import Project="$(MSBuildThisFileDirectory)eng/ApiCompat.targets" Condition="'$(ApiCompatContractAssembly)' != ''" />
 </Project>
