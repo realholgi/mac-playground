@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-macos27.0</TargetFramework>
+    <ApplicationId>local.macplayground.forms-tests</ApplicationId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../System.Windows.Forms/System.Windows.Forms.csproj" />
+    <PackageReference Include="NUnitLite" Version="5.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="../../FormsTest/Forms/TextBoxForm.cs" Link="Forms/TextBoxForm.cs" />
+    <Compile Include="../../FormsTest/Forms/TextBoxForm.Designer.cs" Link="Forms/TextBoxForm.Designer.cs" />
+    <Compile Include="../../FormsTest/Forms/TablesForm.cs" Link="Forms/TablesForm.cs" />
+    <Compile Include="../../FormsTest/Forms/ScrollBarsForm.cs" Link="Forms/ScrollBarsForm.cs" />
+    <Compile Include="../../FormsTest/Forms/DateTimeForm.cs" Link="Forms/DateTimeForm.cs" />
+    <Compile Include="../../FormsTest/Forms/AutoSizeForm.cs" Link="Forms/AutoSizeForm.cs" />
+  </ItemGroup>
+</Project>

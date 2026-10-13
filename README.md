@@ -34,11 +34,31 @@ The `System.Drawing` directory contains a fork of the https://github.com/mono/sy
 
 The `System.Windows.Forms` directory contains a fork of the Mono System.Windows.Forms implementation. It contains a Cocoa backend to allow applications run on 64-bit macOS systems. Layout code was heavily overhauled and debugged on both a test application and a full UI of eM Client. Further experiments were made with replacing some controls with their native counterparts (akin to https://github.com/Clancey/MonoMac.Windows.Form), which can be done on per-control basis.
 
-The anchored-control resize regression can be checked with
-`dotnet build tests/AnchorResize/AnchorResize.csproj` followed by
-`tests/AnchorResize/bin/Debug/net10.0-macos27.0/osx-arm64/AnchorResize.app/Contents/MacOS/AnchorResize`.
-It verifies that a label anchored to all four sides grows and shrinks with a
-`SplitContainer` panel, including while the panel suspends layout during resize.
+The automated control suite is in `tests/FormsTest.Test`. Run it on macOS from a
+logged-in graphical session (.NET 10 SDK, macOS workload, and Xcode 27 required):
+
+```sh
+dotnet build tests/FormsTest.Test/FormsTest.Test.csproj
+tests/FormsTest.Test/bin/Debug/net10.0-macos27.0/osx-arm64/FormsTest.Test.app/Contents/MacOS/FormsTest.Test --result=/tmp/mac-playground-forms-tests.xml
+```
+
+Use `osx-x64` instead of `osx-arm64` on Intel Macs. The NUnitLite runner forces
+execution on the process main thread for AppKit; do not run this suite through
+`dotnet test`. It exits nonzero on failures and writes NUnit XML results.
+NUnitLite options such as `--where` can select individual tests.
+
+The suite replaces the standalone `AnchorResize` executable and verifies
+anchored growth/shrinkage with and without suspended layout, table row spans and
+docking, text selection/replacement and multiline editing, scrollbar input
+boundaries and change notifications, date/calendar selection, and unwrapped
+autosize flow-direction changes. It links the existing `FormsTest` demo sources
+instead of copying their implementations. Additional `DataGridView` tests verify
+viewport/displayed-row updates, preserved current cell and selection, and rejection
+of hidden or out-of-range scroll targets. These use the repository's grid directly;
+the separate `DataGridForm` demo depends on external eM Client controls.
+The manual application remains available for visual rendering, native dialogs,
+printing, notifications, networking, and system-changing experiments; those are
+not covered by this deterministic suite.
 
 `DataGridView.FirstDisplayedScrollingRowIndex` scrolls through the vertical
 scrollbar without changing the current cell or selection. Its getter follows
