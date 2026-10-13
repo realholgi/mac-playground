@@ -27,7 +27,7 @@ namespace MacBridge.Test
 			// Convert it to System.Drawing.Bitmap using Bitmap's internal constructor
 			var bitmap = cgImage.ToBitmap ();
 
-			Assert.AreEqual (cgImage.Width, bitmap.Width);
+			Assert.That (bitmap.Width, Is.EqualTo (cgImage.Width));
 		}
 	}
 }
