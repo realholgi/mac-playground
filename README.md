@@ -14,7 +14,7 @@ Trim analysis is disabled for normal, untrimmed builds. Set `PublishTrimmed=true
 
 Runtime packages track stable .NET 10 releases. Reference-only packages retain the existing .NET 8 API compatibility contracts and .NET 7 drawing facade contract, with their latest servicing updates. `Microsoft.DotNet.ApiCompat` and `Microsoft.DotNet.GenFacades` remain pinned because they have no stable releases on the configured feeds.
 
-`MacBridge.Test` uses NUnit 5 and PackageReference dependencies only. Running `dotnet test MacBridge.Test/MacBridge.Test.csproj` also requires the external `../../../WinApi` source tree linked by `MacBridge.csproj`; it is not included in this repository.
+`MacBridge.Test` uses NUnit 5 and PackageReference dependencies only. Run it with `dotnet test MacBridge.Test/MacBridge.Test.csproj`. Its active image-conversion test references `System.Drawing.Common` directly and loads its copied JPEG fixture from the test output directory, so the test project does not require external WinApi sources. The separate `MacBridge` project still requires the external `../../../WinApi` source tree linked by `MacBridge.csproj`; it is not included in this repository.
 
 The drawing backend retains synchronous `Graphics.FromHwnd` and generic WinForms system-color mappings: AppKit's supported drawing and color APIs are not drop-in replacements. Local `CA1422` exemptions at these call sites keep their behavior without hiding other warnings. Formatter-based ResX/Cursor serialization remains for compatibility; `ResXDataNode` follows Windows WinForms .NET 10's local `SYSLIB0050` exemption to retain rejection of non-serializable values. The `WebForm` example uses `WKWebView` to display its page.
 

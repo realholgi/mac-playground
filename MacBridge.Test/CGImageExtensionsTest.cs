@@ -19,15 +19,16 @@ namespace MacBridge.Test
 		public void TestCreateBitmapFromCGImage ()
 		{
 			// Load CGImage
-			var path =  @"../../data/SetupLogo.jpg";
+			var path = System.IO.Path.Combine (TestContext.CurrentContext.TestDirectory, "data", "SetupLogo.jpg");
 			Debug.WriteLine (System.IO.Path.GetFullPath (path));
-			var provider = new CGDataProvider (path);
-			var cgImage = CGImage.FromJPEG(provider, null, false, CGColorRenderingIntent.Default);
+			using var provider = new CGDataProvider (path);
+			using var cgImage = CGImage.FromJPEG(provider, null, false, CGColorRenderingIntent.Default);
 
 			// Convert it to System.Drawing.Bitmap using Bitmap's internal constructor
-			var bitmap = cgImage.ToBitmap ();
+			using var bitmap = cgImage.ToBitmap ();
 
-			Assert.That (bitmap.Width, Is.EqualTo (cgImage.Width));
+			Assert.That (bitmap.Width, Is.EqualTo (checked((int)cgImage.Width)));
+			Assert.That (bitmap.Height, Is.EqualTo (checked((int)cgImage.Height)));
 		}
 	}
 }
