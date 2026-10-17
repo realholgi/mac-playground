@@ -134,7 +134,7 @@ namespace System.Windows.Forms
 			var ranges = new int[affectedRanges.Length * 2];
 			long removed = 0;
 			long inserted = 0;
-			long textLength = textView.TextStorage.Length;
+			long textLength = (long)textView.TextStorage.Length;
 			for (var i = 0; i < affectedRanges.Length; ++i)
 			{
 				var range = affectedRanges[i].RangeValue;
