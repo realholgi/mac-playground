@@ -84,12 +84,12 @@ jobs:
         if: ${{ !cancelled() && steps.workload.outcome == 'success' }}
         run: dotnet build tests/FormsTest.Test/FormsTest.Test.csproj --configuration Debug --runtime osx-arm64
 
-      - name: Run graphics and grid regressions on the main thread
+      - name: Reproduce formatter lifecycle failure before the fix
         if: ${{ !cancelled() && steps.forms_build.outcome == 'success' }}
         run: |
           mkdir -p "$RUNNER_TEMP/regression-test-results"
           tests/FormsTest.Test/bin/Debug/net10.0-macos27.0/osx-arm64/FormsTest.Test.app/Contents/MacOS/FormsTest.Test \
-            --where 'class == FormsTest.Test.GraphicsTransformTests or class == FormsTest.Test.DataGridViewSortTests or class == FormsTest.Test.DataGridViewValidationTests or class == FormsTest.Test.NativeMultilineMaxLengthTests or class == FormsTest.Test.GraphicsClipAndBitmapLockTests or class == FormsTest.Test.NativeDialogButtonTests or class == FormsTest.Test.NativeMultilineEditBoundaryTests' \
+            --where 'class == FormsTest.Test.FormatterLifecycleTests' \
             --result="$RUNNER_TEMP/regression-test-results/forms.xml"
 
       - name: Upload small failure reports
