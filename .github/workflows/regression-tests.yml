@@ -89,7 +89,7 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/regression-test-results"
           tests/FormsTest.Test/bin/Debug/net10.0-macos27.0/osx-arm64/FormsTest.Test.app/Contents/MacOS/FormsTest.Test \
-            --where 'class == FormsTest.Test.GraphicsTransformTests or class == FormsTest.Test.DataGridViewSortTests or class == FormsTest.Test.DataGridViewValidationTests or class == FormsTest.Test.NativeMultilineMaxLengthTests' \
+            --where 'class == FormsTest.Test.GraphicsTransformTests or class == FormsTest.Test.DataGridViewSortTests or class == FormsTest.Test.DataGridViewValidationTests or class == FormsTest.Test.NativeMultilineMaxLengthTests or class == FormsTest.Test.GraphicsClipAndBitmapLockTests' \
             --result="$RUNNER_TEMP/regression-test-results/forms.xml"
 
       - name: Upload small failure reports
