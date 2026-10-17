@@ -1448,8 +1448,19 @@ namespace System.Drawing {
 			graphicsUnit = gstate.pageUnit;
 			pageScale = gstate.pageScale;
 			SmoothingMode = gstate.smoothingMode;
-			clip = gstate.clipRegion;
-			applyModelView();
+			clip = gstate.clipRegion == null ? null : gstate.clipRegion.Clone();
+			// The native clip is part of CGContext state. Rebuild it as well as
+			// the managed region, otherwise restored pixels remain clipped.
+			ResetNativeClip();
+			if (clip != null && !clip.IsInfinite(this)) {
+				if (clip.IsEmpty(this)) {
+					context.ClipToRect(CGRect.Empty);
+				} else {
+					context.AddPath(clip.regionPath);
+					context.ClosePath();
+					context.Clip();
+				}
+			}
 		}
 		
 		public GraphicsState Save ()

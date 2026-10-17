@@ -1027,7 +1027,23 @@ namespace System.Drawing {
 				GetRenderableContext ();
 
 			//bitmapData.Scan0 = (IntPtr)((long)pinnedScanArray.AddrOfPinnedObject() + ((rect.Left * NativeCGImage.BitsPerPixel + 7) / 8) + (rect.Top * NativeCGImage.BytesPerRow));
-			bitmapData.Scan0 = bitmapBlock;
+			// Read-only clients get an independent BGRA snapshot, never the
+			// native premultiplied RGBA buffer that Graphics draws into.
+			if (flags == ImageLockMode.ReadOnly) {
+				int byteCount = checked((int)(NativeCGImage.BytesPerRow * (int)rect.Height));
+				IntPtr snapshot = Marshal.AllocHGlobal(byteCount);
+				try {
+					byte[] bytes = new byte[byteCount];
+					Marshal.Copy(bitmapBlock, bytes, 0, byteCount);
+					Marshal.Copy(bytes, 0, snapshot, byteCount);
+				} catch {
+					Marshal.FreeHGlobal(snapshot);
+					throw;
+				}
+				bitmapData.Scan0 = snapshot;
+			} else {
+				bitmapData.Scan0 = bitmapBlock;
+			}
 			bitmapData.Height = (int)rect.Height;
 			bitmapData.Width = (int)rect.Width;
 			bitmapData.PixelFormat = pixelFormat;
@@ -1047,8 +1063,11 @@ namespace System.Drawing {
 
 		public void UnlockBits (BitmapData data)
 		{
-			if ((ImageLockMode)data.Reserved == ImageLockMode.ReadOnly)
+			if ((ImageLockMode)data.Reserved == ImageLockMode.ReadOnly) {
+				Marshal.FreeHGlobal(data.Scan0);
+				data.Scan0 = IntPtr.Zero;
 				return;
+			}
 			
 			if (NativeCGImage.BitsPerPixel == 32  && (PixelFormat & PixelFormat.Indexed) == 0) {
 				if (!ConversionHelpers.sTablesInitialized)
