@@ -16,7 +16,8 @@ public sealed class DataGridViewValidationTests
         using var form = new Form { ClientSize = new Size(300, 180) };
         using var grid = new DataGridView { Dock = DockStyle.Fill, AllowUserToAddRows = false };
         grid.Columns.Add(new DataGridViewTextBoxColumn { ValueType = typeof(int) });
-        grid.Rows.Add(12);
+        grid.Rows.Add();
+        grid[0, 0].Value = 12;
         form.Controls.Add(grid);
         try
         {
@@ -45,7 +46,8 @@ public sealed class DataGridViewValidationTests
         using var form = new Form { ClientSize = new Size(300, 180) };
         using var grid = new DataGridView { Dock = DockStyle.Fill, AllowUserToAddRows = false };
         grid.Columns.Add(new DataGridViewTextBoxColumn { ValueType = typeof(int) });
-        grid.Rows.Add(12);
+        grid.Rows.Add();
+        grid[0, 0].Value = 12;
         form.Controls.Add(grid);
         try
         {
