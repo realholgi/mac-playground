@@ -67,6 +67,9 @@ namespace System.Windows.Forms
 				if (textField != null)
 				{
 					textField.AbortEditing();
+					// AppKit may retain the field after the managed control is disposed.
+					// Detach its formatter before breaking the formatter's owner link.
+					textField.Formatter = null;
 					textField.TextShouldBeginEditing = null;
 					textField.Changed -= TextFieldChanged;
 					textField.DoCommandBySelector = null;
@@ -459,16 +462,23 @@ namespace System.Windows.Forms
 				this.owner = owner;
 			}
 
+			string PreprocessOrPassThrough(string value)
+			{
+				// A queued native callback can outlive Release(). Do not re-enter
+				// the disposed control or apply its old MaxLength/preprocessor.
+				return owner == null ? value ?? String.Empty : owner.FormatterPreprocessText(value);
+			}
+
 			public override string StringFor(NSObject value)
 			{
-				return owner.FormatterPreprocessText(value?.ToString() ?? null);
+				return PreprocessOrPassThrough(value?.ToString() ?? null);
 			}
 
 			public override bool GetObjectValue(out NSObject obj, string str, out NSString error)
 			{
 				try
 				{
-					obj = (NSString)owner.FormatterPreprocessText(str ?? String.Empty);
+					obj = (NSString)PreprocessOrPassThrough(str ?? String.Empty);
 					error = null;
 					return true;
 				}
