@@ -3,7 +3,7 @@
 This is a mix of code that was developed during our effort to port eM Client to macOS. It is a hodgepodge of various projects and experiments. The notable ones are listed below. The code is released as-is.
 
 To test the experiments:
-* Make sure .NET 10 SDK and the macOS workload for Xcode 27 are installed (macOS 14 or newer)
+* Make sure Xcode 27, .NET 10 SDK, and the matching macOS workload are installed (macOS 26.6 or newer for Xcode 27)
 * Run `dotnet workload restore` from the Terminal
 * Open solution folder in Visual Studio Code or Visual Studio
 * Run the test application
@@ -80,6 +80,36 @@ not covered by this deterministic suite.
 scrollbar without changing the current cell or selection. Its getter follows
 the actual viewport, and row `Displayed` flags are refreshed when painting so
 rows scrolled out of view are no longer reported as visible.
+
+## Drawing and sorting regression tests
+
+The focused regression fixtures cover:
+
+* `MacBridge.Test.MatrixTests`: invertibility of identity, reflection, singular,
+  and very small matrices, plus an inverse point round trip with an explicit
+  numerical tolerance.
+* `FormsTest.Test.GraphicsTransformTests`: independent `Transform` copies,
+  `Append`/`Prepend` multiplication, coordinate conversion, and offscreen drawing
+  after multiplication, translation, and reset.
+* `FormsTest.Test.DataGridViewSortTests`: fractional, negative, large, and duplicate
+  numeric values under `de-DE` and `en-US`, including repeated sorts and reversed
+  direction.
+
+The graphics fixture uses the Forms runner because `Graphics` initializes AppKit
+screen state even when drawing to an offscreen bitmap. Run the focused checks on
+an Apple Silicon Mac with the prerequisites above:
+
+```sh
+dotnet test MacBridge.Test/MacBridge.Test.csproj --configuration Debug --runtime osx-arm64 --filter 'FullyQualifiedName~MacBridge.Test.MatrixTests'
+dotnet build tests/FormsTest.Test/FormsTest.Test.csproj --configuration Debug --runtime osx-arm64
+tests/FormsTest.Test/bin/Debug/net10.0-macos27.0/osx-arm64/FormsTest.Test.app/Contents/MacOS/FormsTest.Test --where 'class == FormsTest.Test.GraphicsTransformTests or class == FormsTest.Test.DataGridViewSortTests' --result=/tmp/mac-playground-regression-tests.xml
+```
+
+[The regression workflow](.github/workflows/regression-tests.yml) runs these
+fixtures for relevant pull requests and pushes to `main`, and supports manual
+dispatch. It uses the `xcode-27` ARM64 runner with Xcode 27.0, .NET SDK 10.0.401,
+and [macOS workload set 10.0.401.1](https://github.com/dotnet/macios/releases/tag/dotnet-10.0.1xx-xcode27.0-10722). It builds the two test projects directly and
+retains only XML/TRX reports on failure, for three days.
 
 ## License
 

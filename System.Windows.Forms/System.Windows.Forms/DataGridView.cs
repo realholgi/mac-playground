@@ -6632,7 +6632,7 @@ namespace System.Windows.Forms {
 					return -1 * direction;
 
 				if (numeric_sort)
-					return (int)(double.Parse (val1.ToString ()) - double.Parse (val2.ToString ())) * direction;
+					return double.Parse (val1.ToString ()).CompareTo (double.Parse (val2.ToString ())) * direction;
 				else
 					return string.Compare (val1.ToString (), val2.ToString ()) * direction;
 			}
