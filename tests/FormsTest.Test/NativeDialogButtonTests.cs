@@ -24,8 +24,7 @@ public sealed class NativeDialogButtonTests
         form.CancelButton = cancel;
         try
         {
-            form.Show();
-            Application.DoEvents();
+            // NativeButton is created on demand; no AppKit event pump is needed.
             Assert.That(Native(accept).KeyEquivalent, Is.EqualTo("\r"));
             Assert.That(Native(cancel).KeyEquivalent, Is.EqualTo("\u001b"));
         }
@@ -42,8 +41,7 @@ public sealed class NativeDialogButtonTests
         form.CancelButton = shared;
         try
         {
-            form.Show();
-            Application.DoEvents();
+            // NativeButton is created on demand; no AppKit event pump is needed.
             Assert.That(Native(shared).KeyEquivalent, Is.EqualTo("\u001b"));
         }
         finally { form.Close(); }
@@ -59,8 +57,7 @@ public sealed class NativeDialogButtonTests
         form.Controls.Add(second);
         try
         {
-            form.Show();
-            Application.DoEvents();
+            // NativeButton is created on demand; no AppKit event pump is needed.
             form.AcceptButton = first;
             Assert.That(Native(first).KeyEquivalent, Is.EqualTo("\r"));
             form.AcceptButton = second;
@@ -82,8 +79,7 @@ public sealed class NativeDialogButtonTests
         form.Controls.Add(second);
         try
         {
-            form.Show();
-            Application.DoEvents();
+            // NativeButton is created on demand; no AppKit event pump is needed.
             form.CancelButton = first;
             Assert.That(Native(first).KeyEquivalent, Is.EqualTo("\u001b"));
             form.CancelButton = second;
@@ -104,8 +100,7 @@ public sealed class NativeDialogButtonTests
         form.AcceptButton = button;
         try
         {
-            form.Show();
-            Application.DoEvents();
+            // NativeButton is created on demand; no AppKit event pump is needed.
             Assert.That(Native(button).Enabled, Is.True);
             button.Enabled = false;
             Assert.That(Native(button).Enabled, Is.False);
