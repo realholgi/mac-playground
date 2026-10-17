@@ -26,7 +26,7 @@ public sealed class NativeMultilineMaxLengthTests
     {
         using var textBox = new TextBox { Multiline = true, MaxLength = limit };
         using var native = new NSTextView(new CGRect(0, 0, 100, 40));
-        native.SetString((NSString)initial);
+        native.TextStorage.SetString(new NSAttributedString(initial));
         var range = NSValue.FromRange(new NSRange(start, length));
 
         Assert.That(AllowChange(textBox, native, new[] { range }, new[] { insertion }), Is.EqualTo(expected));
@@ -37,7 +37,7 @@ public sealed class NativeMultilineMaxLengthTests
     {
         using var textBox = new TextBox { Multiline = true, MaxLength = 6 };
         using var native = new NSTextView(new CGRect(0, 0, 100, 40));
-        native.SetString((NSString)"abcdef");
+        native.TextStorage.SetString(new NSAttributedString("abcdef"));
         var ranges = new[] { NSValue.FromRange(new NSRange(1, 2)), NSValue.FromRange(new NSRange(4, 1)) };
 
         Assert.That(AllowChange(textBox, native, ranges, new[] { "Z", "XY" }), Is.True);
