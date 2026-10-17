@@ -3,7 +3,7 @@
 This is a mix of code that was developed during our effort to port eM Client to macOS. It is a hodgepodge of various projects and experiments. The notable ones are listed below. The code is released as-is.
 
 To test the experiments:
-* Make sure .NET 10 SDK and the macOS workload for Xcode 27 are installed (macOS 14 or newer)
+* Make sure Xcode 27, .NET 10 SDK, and the matching macOS workload are installed (macOS 26.6 or newer for Xcode 27)
 * Run `dotnet workload restore` from the Terminal
 * Open solution folder in Visual Studio Code or Visual Studio
 * Run the test application
@@ -108,7 +108,7 @@ tests/FormsTest.Test/bin/Debug/net10.0-macos27.0/osx-arm64/FormsTest.Test.app/Co
 [The regression workflow](.github/workflows/regression-tests.yml) runs these
 fixtures for relevant pull requests and pushes to `main`, and supports manual
 dispatch. It uses the `xcode-27` ARM64 runner with Xcode 27.0, .NET SDK 10.0.401,
-and macOS workload set 10.0.401.1. It builds the two test projects directly and
+and [macOS workload set 10.0.401.1](https://github.com/dotnet/macios/releases/tag/dotnet-10.0.1xx-xcode27.0-10722). It builds the two test projects directly and
 retains only XML/TRX reports on failure, for three days.
 
 ## License
