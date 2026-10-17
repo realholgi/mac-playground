@@ -113,15 +113,11 @@ namespace System.Drawing.Drawing2D
 		
 		public bool IsInvertible {
 			get {
-				var inverted = transform.Invert ();
-				if (inverted.A == transform.A &&
-				    inverted.B == transform.B &&
-				    inverted.C == transform.C &&
-				    inverted.D == transform.D &&
-				    inverted.Tx == transform.Tx &&
-				    inverted.Ty == transform.Ty)
-					return false;
-				return true;
+				// Identity and reflections can equal their inverse and still be invertible.
+				// Use double precision so small, nonzero float scales are not rounded to zero.
+				var determinant = (double)transform.A * (double)transform.D
+					- (double)transform.B * (double)transform.C;
+				return double.IsFinite(determinant) && determinant != 0;
 			}
 		}
 		

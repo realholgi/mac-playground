@@ -1852,10 +1852,8 @@ namespace System.Drawing {
 			if (matrix == null)
 				throw new ArgumentNullException ("matrix");
 
-			if (order == MatrixOrder.Prepend)
-				context.ConcatCTM (matrix.transform);
-			else
-				context.ConcatCTM (matrix.transform);
+			modelMatrix.Multiply(matrix, order);
+			applyModelView();
 		}
 		
 		public void TransformPoints (CoordinateSpace destSpace, CoordinateSpace srcSpace, PointF [] pts)
