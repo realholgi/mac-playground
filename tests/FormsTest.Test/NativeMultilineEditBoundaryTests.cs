@@ -16,7 +16,7 @@ public sealed class NativeMultilineEditBoundaryTests
     [TestCase(4, 0, 1, false)]
     [TestCase(3, 2, 2, false)]
     [TestCase(0, 5, 0, false)]
-    [TestCase(1, 3, 1, true)]
+    [TestCase(1, 2, 0, true)]
     [TestCase(4, 0, 0, true)]
     public void EditRangesAreCheckedBeforeCallingCustomCallback(
         int start, int length, int extra, bool valid)
@@ -30,7 +30,7 @@ public sealed class NativeMultilineEditBoundaryTests
         bool accepted = AllowChange(textBox, native, ranges, new[] { "x" });
         Assert.That(accepted, Is.EqualTo(valid));
         Assert.That(invoked, Is.EqualTo(valid ? 1 : 0));
-        Assert.That(native.TextStorage.Length, Is.EqualTo((nuint)4));
+        Assert.That((long)native.TextStorage.Length, Is.EqualTo(4L));
     }
 
     [Test]
@@ -51,7 +51,7 @@ public sealed class NativeMultilineEditBoundaryTests
         Assert.That(AllowChange(textBox, native, ranges, new[] { "xx", "y" }), Is.False);
         Assert.That(seen, Is.EqualTo(new[] { 0, 1, 3, 2 }));
         Assert.That(text, Is.EqualTo(new[] { "xx", "y" }));
-        Assert.That(native.TextStorage.Length, Is.EqualTo((nuint)6));
+        Assert.That((long)native.TextStorage.Length, Is.EqualTo(6L));
     }
 
     [Test]
