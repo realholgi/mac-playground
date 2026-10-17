@@ -127,18 +127,38 @@ namespace System.Windows.Forms
 
 		internal virtual bool TextViewShouldChangeTextInRanges(NSTextView textView, NSValue[] affectedRanges, string[] replacementStrings)
 		{
-			if (ShouldChangeTextsInRanges == null)
-				return true;
+			if (affectedRanges == null || replacementStrings == null ||
+				affectedRanges.Length != replacementStrings.Length)
+				return false;
 
 			var ranges = new int[affectedRanges.Length * 2];
-			for(var i = 0; i < affectedRanges.Length; ++i)
+			long removed = 0;
+			long inserted = 0;
+			long textLength = (long)textView.TextStorage.Length;
+			for (var i = 0; i < affectedRanges.Length; ++i)
 			{
 				var range = affectedRanges[i].RangeValue;
-				ranges[2 * i] = (int)range.Location;
-				ranges[2 * i + 1] = (int)range.Length;
+				long start = (long)range.Location;
+				long length = (long)range.Length;
+				if (start < 0 || length < 0 || start > textLength ||
+					length > textLength - start || start > int.MaxValue ||
+					length > int.MaxValue)
+					return false;
+				ranges[2 * i] = (int)start;
+				ranges[2 * i + 1] = (int)length;
+				removed += length;
+				inserted += (replacementStrings[i] ?? String.Empty).Length;
 			}
-			
-			return ShouldChangeTextsInRanges(ranges, replacementStrings);
+
+			// Native text edits bypass the NSTextField formatter. Apply the limit
+			// to the resulting length, not the length of the replacement alone.
+			// Always permit edits that do not grow an already overlong document.
+			if (MaxLength > 0 && inserted > removed &&
+				textLength - removed + inserted > MaxLength)
+				return false;
+
+			return ShouldChangeTextsInRanges == null ||
+				ShouldChangeTextsInRanges(ranges, replacementStrings);
 		}
 
 		// macOS-specific, but intentionally protected

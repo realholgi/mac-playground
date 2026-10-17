@@ -2416,21 +2416,20 @@ namespace System.Windows.Forms {
 				return true;
 
 			try {
-				// convert
-				object newValue = currentCell.ParseFormattedValue (currentCell.EditedFormattedValue, 
-										   currentCell.InheritedStyle, null, null);
-
-				DataGridViewCellValidatingEventArgs validateArgs = new DataGridViewCellValidatingEventArgs (currentCell.ColumnIndex, 
-															    currentCell.RowIndex, 
-															    newValue);
-				// validate
+				// Validate the edited text before parsing. The user must be able to
+				// reject malformed input without triggering a conversion error.
+				object formattedValue = currentCell.EditedFormattedValue;
+				DataGridViewCellValidatingEventArgs validateArgs = new DataGridViewCellValidatingEventArgs (currentCell.ColumnIndex,
+															    currentCell.RowIndex,
+															    formattedValue);
 				OnCellValidating (validateArgs);
 				if (validateArgs.Cancel)
 					return false;
-				OnCellValidated (new DataGridViewCellEventArgs (currentCell.ColumnIndex, currentCell.RowIndex));
 
-				// commit
+				object newValue = currentCell.ParseFormattedValue (formattedValue,
+										   currentCell.InheritedStyle, null, null);
 				currentCell.Value = newValue;
+				OnCellValidated (new DataGridViewCellEventArgs (currentCell.ColumnIndex, currentCell.RowIndex));
 
 			} catch (Exception e) {
 				DataGridViewDataErrorEventArgs args = new DataGridViewDataErrorEventArgs (e, currentCell.ColumnIndex, currentCell.RowIndex, 
