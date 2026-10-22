@@ -12,7 +12,7 @@ Debug macOS builds omit the hardened runtime so ad-hoc signed native libraries c
 
 Trim analysis is disabled for normal, untrimmed builds. Set `PublishTrimmed=true` when preparing a trimmed build to enable the analyzer and review its warnings before shipping.
 
-Runtime packages track stable .NET 10 releases, except for the managed `Accessibility.dll` matching the existing .NET 8 WinForms contract. Reference-only packages retain the .NET 8 API compatibility contracts and .NET 7 drawing facade contract, with their latest servicing updates. `Microsoft.DotNet.GenFacades` remains pinned because it has no stable release on the configured feeds.
+Runtime packages track stable .NET 10 releases, except for the serviced managed `Accessibility.dll` matching the existing .NET 8 WinForms contract. Reference-only packages pin the .NET 8 API compatibility contracts and .NET 7 drawing facade contract independently of runtime servicing. `Microsoft.DotNet.GenFacades` remains pinned because it has no stable release on the configured feeds.
 
 ### API compatibility checks
 
@@ -22,7 +22,7 @@ Runtime packages track stable .NET 10 releases, except for the managed `Accessib
 
 The three assemblies now use version **8.0.0.0** and are public-signed with their respective Microsoft reference public keys. This matches contract identities; it is **not** a Microsoft signature or proof of authenticity. `MacBridge` uses the matching public key for friend access. Rebuild consumers after this identity change.
 
-WinForms copies the real managed `Accessibility.dll` from the official `Microsoft.WindowsDesktop.App.Runtime.win-x64` 8.0.31 package. Other Windows runtime components are excluded. Applications must bundle this DLL, not the reference-only assembly or an embedded interop substitute. Consumers that directly compile against `IAccessible` also need an explicit reference, as demonstrated in `tests/FormsTest.Test`. The adapter exposes the existing managed accessibility behavior; it does not add native Windows accessibility services or AppKit accessibility integration.
+WinForms copies the real managed `Accessibility.dll` from the official `Microsoft.WindowsDesktop.App.Runtime.win-x64` 8.0.32 servicing package, including the [security fixes for affected 8.0.31 packages](https://github.com/advisories/GHSA-4j9v-h7pp-725h). The .NET 8.0.31 reference-only API contracts remain unchanged. Other Windows runtime components are excluded. Applications must bundle this DLL, not the reference-only assembly or an embedded interop substitute. Consumers that directly compile against `IAccessible` also need an explicit reference, as demonstrated in `tests/FormsTest.Test`. The adapter exposes the existing managed accessibility behavior; it does not add native Windows accessibility services or AppKit accessibility integration.
 
 `MacBridge.Test` uses NUnit 5 and PackageReference dependencies only. Run it with `dotnet test MacBridge.Test/MacBridge.Test.csproj`. Its active image-conversion test references `System.Drawing.Common` directly and loads its copied JPEG fixture from the test output directory, so the test project does not require external WinApi sources. The separate `MacBridge` project still requires the external `../../../WinApi` source tree linked by `MacBridge.csproj`; it is not included in this repository.
 
