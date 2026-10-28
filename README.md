@@ -16,15 +16,17 @@ Runtime packages track stable .NET 10 releases, except for the serviced managed 
 
 ### API compatibility checks
 
-`System.Drawing.Common`, `System.Windows.Forms.Primitives`, and `System.Windows.Forms` run `Microsoft.DotNet.ApiCompat.Task` **10.0.401** during normal builds against the .NET 8.0.31 reference contracts. Existing API differences are recorded in `CompatibilitySuppressions.xml`; the obsolete text baselines have been removed. New public API differences fail the build rather than being automatically suppressed.
+`System.Drawing.Common`, `System.Windows.Forms.Primitives`, and `System.Windows.Forms` run `Microsoft.DotNet.ApiCompat.Task` **10.0.403** during normal builds against the .NET 8.0.31 reference contracts. Existing API differences are recorded in `CompatibilitySuppressions.xml`; the obsolete text baselines have been removed. New public API differences fail the build rather than being automatically suppressed.
 
 `eng/ApiCompat.targets` uses build-only `Mono.Cecil` 0.11.6 to prepare check-only reference copies under `obj`. It removes inaccessible interface declarations, including public interfaces nested in internal types and generic interfaces with inaccessible arguments. This avoids false positives for `ComboBox.ObjectCollection` and `WebBrowserSite` without disabling interface checks. Public interfaces, members, and attributes remain checked. The projected reference assemblies are not shipped.
 
 The three assemblies now use version **8.0.0.0** and are public-signed with their respective Microsoft reference public keys. This matches contract identities; it is **not** a Microsoft signature or proof of authenticity. `MacBridge` uses the matching public key for friend access. Rebuild consumers after this identity change.
 
-WinForms copies the real managed `Accessibility.dll` from the official `Microsoft.WindowsDesktop.App.Runtime.win-x64` 8.0.32 servicing package, including the [security fixes for affected 8.0.31 packages](https://github.com/advisories/GHSA-4j9v-h7pp-725h). The .NET 8.0.31 reference-only API contracts remain unchanged. Other Windows runtime components are excluded. Applications must bundle this DLL, not the reference-only assembly or an embedded interop substitute. Consumers that directly compile against `IAccessible` also need an explicit reference, as demonstrated in `tests/FormsTest.Test`. The adapter exposes the existing managed accessibility behavior; it does not add native Windows accessibility services or AppKit accessibility integration.
+WinForms copies the real managed `Accessibility.dll` from the official `Microsoft.WindowsDesktop.App.Runtime.win-x64` 8.0.33 servicing package, including the [security fixes for affected 8.0.31 packages](https://github.com/advisories/GHSA-4j9v-h7pp-725h). The .NET 8.0.31 reference-only API contracts remain unchanged. Other Windows runtime components are excluded. Applications must bundle this DLL, not the reference-only assembly or an embedded interop substitute. Consumers that directly compile against `IAccessible` also need an explicit reference, as demonstrated in `tests/FormsTest.Test`. The adapter exposes the existing managed accessibility behavior; it does not add native Windows accessibility services or AppKit accessibility integration.
 
 `MacBridge.Test` uses NUnit 5 and PackageReference dependencies only. Run it with `dotnet test MacBridge.Test/MacBridge.Test.csproj`. Its active image-conversion test references `System.Drawing.Common` directly and loads its copied JPEG fixture from the test output directory, so the test project does not require external WinApi sources. The separate `MacBridge` project still requires the external `../../../WinApi` source tree linked by `MacBridge.csproj`; it is not included in this repository.
+
+The demo uses `System.Resources.Extensions` 10.0.14, and `MacBridge.Test` uses `Microsoft.NET.Test.Sdk` 18.11.0.
 
 The drawing backend retains synchronous `Graphics.FromHwnd` and generic WinForms system-color mappings: AppKit's supported drawing and color APIs are not drop-in replacements. Local `CA1422` exemptions at these call sites keep their behavior without hiding other warnings. Formatter-based ResX/Cursor serialization remains for compatibility; `ResXDataNode` follows Windows WinForms .NET 10's local `SYSLIB0050` exemption to retain rejection of non-serializable values. The `WebForm` example uses `WKWebView` to display its page.
 
@@ -107,7 +109,7 @@ tests/FormsTest.Test/bin/Debug/net10.0-macos27.0/osx-arm64/FormsTest.Test.app/Co
 
 [The regression workflow](.github/workflows/regression-tests.yml) runs these
 fixtures for relevant pull requests and pushes to `main`, and supports manual
-dispatch. It uses the `xcode-27` ARM64 runner with Xcode 27.0, .NET SDK 10.0.401,
+dispatch. It uses the `xcode-27` ARM64 runner with Xcode 27.0, .NET SDK 10.0.403,
 and [macOS workload set 10.0.401.1](https://github.com/dotnet/macios/releases/tag/dotnet-10.0.1xx-xcode27.0-10722). It builds the two test projects directly and
 retains only XML/TRX reports on failure, for three days.
 
