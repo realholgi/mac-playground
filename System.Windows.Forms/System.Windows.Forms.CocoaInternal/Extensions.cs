@@ -1242,6 +1242,8 @@ namespace System.Windows.Forms.Mac
 
 		public static string AccessibilityTitle(this Control control)
 		{
+			if (!string.IsNullOrEmpty(control?.AccessibleName))
+				return control.AccessibleName;
 			string text = null;
 			if (control.GetStyle(ControlStyles.UseTextForAccessibility))
 				text = control.Text?.RemoveMnemonic();
@@ -1256,6 +1258,10 @@ namespace System.Windows.Forms.Mac
 
 		public static NSObject AccessibilityValue(this Control control)
 		{
+			if (control is CheckBox checkBox)
+				return new NSNumber((int)checkBox.CheckState);
+			if (control is RadioButton radioButton)
+				return new NSNumber(radioButton.Checked ? 1 : 0);
 			var obj = control.AccessibilityObject;
 			if (obj.Value != null)
 				return obj.Value.ToNSString();
@@ -1267,6 +1273,8 @@ namespace System.Windows.Forms.Mac
 
 		public static bool SupportsAccessibilityValue(this Control control)
 		{
+			if (control is CheckBox || control is RadioButton || control is TrackBar)
+				return true;
 			var obj = control?.AccessibilityObject;
 			if (obj?.Value is string s && String.IsNullOrWhiteSpace(s))
 				return false;
@@ -1395,16 +1403,9 @@ namespace System.Windows.Forms.Mac
 
 		public static NSObject ToAccessibilityValue(this AccessibleStates state)
 		{
-			switch (state)
-			{
-				case AccessibleStates.None:
-					return new NSNumber(0);
-				case AccessibleStates.Checked:
-					return new NSNumber(1);
-				//case AccessibleStates.Mixed:
-				//	return new NSNumber(2);
-			}
-			return null;
+			if ((state & AccessibleStates.Mixed) != 0)
+				return new NSNumber(2);
+			return new NSNumber((state & AccessibleStates.Checked) != 0 ? 1 : 0);
 		}
 
 		#endregion // Accessibility

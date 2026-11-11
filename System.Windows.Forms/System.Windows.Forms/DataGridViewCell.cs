@@ -36,9 +36,8 @@ namespace System.Windows.Forms {
 	[TypeConverter (typeof (DataGridViewCellConverter))]
 	public abstract class DataGridViewCell : DataGridViewElement, ICloneable, IDisposable
 	{
-		private DataGridView dataGridViewOwner;
-
 		private AccessibleObject accessibilityObject;
+		private bool accessibilityDisposed;
 		private int columnIndex;
 		private ContextMenuStrip contextMenuStrip;
 		private bool displayed;
@@ -56,7 +55,6 @@ namespace System.Windows.Forms {
 		protected DataGridViewCell ()
 		{
 			columnIndex = -1;
-			dataGridViewOwner = null;
 			errorText = string.Empty;
 		}
 
@@ -73,6 +71,12 @@ namespace System.Windows.Forms {
 				}
 				return accessibilityObject;
 			}
+		}
+
+		protected void ResetAccessibilityObject ()
+		{
+			accessibilityObject = null;
+			accessibilityDisposed = false;
 		}
 
 		public int ColumnIndex {
@@ -438,7 +442,7 @@ namespace System.Windows.Forms {
 		public virtual object Clone ()
 		{
 			DataGridViewCell result = (DataGridViewCell) Activator.CreateInstance (GetType ());
-			result.accessibilityObject = this.accessibilityObject;
+			result.accessibilityObject = null;
 			result.columnIndex = this.columnIndex;
 			result.displayed = this.displayed;
 			result.errorText = this.errorText;
@@ -461,6 +465,9 @@ namespace System.Windows.Forms {
 
 		public void Dispose ()
 		{
+			accessibilityDisposed = true;
+			Dispose (true);
+			GC.SuppressFinalize (this);
 		}
 
 		public Rectangle GetContentBounds (int rowIndex)
@@ -1450,139 +1457,200 @@ namespace System.Windows.Forms {
 		}
 
 		[ComVisibleAttribute(true)]
-		protected class DataGridViewCellAccessibleObject : AccessibleObject {
-
+		protected class DataGridViewCellAccessibleObject : AccessibleObject, IDataGridViewAccessibleNode {
 			private DataGridViewCell dataGridViewCell;
-
-			public DataGridViewCellAccessibleObject () {
-			}
-
-			public DataGridViewCellAccessibleObject (DataGridViewCell owner) {
-				this.dataGridViewCell = owner;
-			}
-
-			public override Rectangle Bounds {
-				get { throw new NotImplementedException(); }
-			}
-
-			public override string DefaultAction {
-				get { return "Edit"; }
-			}
-
-			public override string Help {
-				get { return base.Help; }
-			}
-			
-			public override string Name {
-				get { return dataGridViewCell.OwningColumn.HeaderText + ": " + dataGridViewCell.RowIndex.ToString(); }
-			}
-
+			public DataGridViewCellAccessibleObject () {}
+			public DataGridViewCellAccessibleObject (DataGridViewCell owner) { dataGridViewCell = owner; }
 			public DataGridViewCell Owner {
 				get { return dataGridViewCell; }
 				set { dataGridViewCell = value; }
 			}
-
+			public DataGridView Grid { get { return Owner == null ? null : Owner.DataGridView; } }
+			public DataGridViewRow Row { get { return Owner == null ? null : Owner.OwningRow; } }
+			public DataGridViewCell Cell { get { return Owner; } }
+			protected bool IsHeader { get { return Owner is DataGridViewHeaderCell; } }
+			protected bool Available {
+				get {
+					if (Owner == null || Owner.accessibilityDisposed || Grid == null || !Grid.AccessibilityAvailable)
+						return false;
+					if (Owner is DataGridViewColumnHeaderCell)
+						return Owner.OwningColumn != null && Owner.ColumnIndex >= 0 &&
+							Owner.ColumnIndex < Grid.Columns.Count &&
+							ReferenceEquals (Grid.Columns [Owner.ColumnIndex].HeaderCell, Owner);
+					if (!Grid.AccessibilityHasRow (Row))
+						return false;
+					if (Owner is DataGridViewRowHeaderCell)
+						return ReferenceEquals (Row.HeaderCell, Owner);
+					return Owner.ColumnIndex >= 0 && Owner.ColumnIndex < Row.Cells.Count &&
+						ReferenceEquals (Row.Cells [Owner.ColumnIndex], Owner);
+				}
+			}
+			protected bool IsVisible {
+				get {
+					return Available && Owner.Visible &&
+						(!(Owner is DataGridViewColumnHeaderCell) || Grid.ColumnHeadersVisible) &&
+						(!(Owner is DataGridViewRowHeaderCell) || Grid.RowHeadersVisible);
+				}
+			}
+			private bool CanSelect { get { return IsVisible && Grid.Enabled && Grid.Visible; } }
+			private bool CanEdit {
+				get {
+					return CanSelect && !IsHeader && !Grid.ReadOnly && !Owner.ReadOnly &&
+						(Owner.InheritedState & DataGridViewElementStates.ReadOnly) == 0 &&
+						(Owner.EditType != null && (typeof (TextBox).IsAssignableFrom (Owner.EditType) ||
+							typeof (ComboBox).IsAssignableFrom (Owner.EditType)));
+				}
+			}
+			public override Rectangle Bounds {
+				get {
+					return IsVisible ? Grid.RectangleToScreen (Grid.GetCellDisplayRectangle (Owner.ColumnIndex, Owner.RowIndex, false)) :
+						Rectangle.Empty;
+				}
+			}
+			public override string DefaultAction { get { return CanEdit ? "Edit" : string.Empty; } }
+			public override string Name {
+				get {
+					if (!Available)
+						return string.Empty;
+					if (Owner is DataGridViewColumnHeaderCell)
+						return Owner.OwningColumn.HeaderText ?? string.Empty;
+					if (Owner is DataGridViewRowHeaderCell)
+						return string.IsNullOrEmpty (Value) ? (Owner.RowIndex + 1).ToString () : Value;
+					return Owner.OwningColumn.HeaderText + ": " + (Owner.RowIndex + 1).ToString ();
+				}
+			}
 			public override AccessibleObject Parent {
-				get { return dataGridViewCell.OwningRow.AccessibilityObject; }
+				get {
+					if (!Available)
+						return null;
+					return Owner is DataGridViewColumnHeaderCell ? Grid.AccessibilityHeaderRow : Row.AccessibilityObject;
+				}
 			}
-
-			public override AccessibleRole Role {
-				get { return AccessibleRole.Cell; }
-			}
-
+			public override AccessibleRole Role { get { return AccessibleRole.Cell; } }
 			public override AccessibleStates State {
 				get {
-					if (dataGridViewCell.Selected) {
-						return AccessibleStates.Selected;
+					if (!Available)
+						return AccessibleStates.Unavailable | AccessibleStates.Offscreen;
+					AccessibleStates state = Grid.AccessibilityState (Bounds);
+					if (!IsVisible)
+						state |= AccessibleStates.Invisible | AccessibleStates.Offscreen;
+					if (IsHeader || Grid.ReadOnly || Owner.ReadOnly ||
+						(Owner.InheritedState & DataGridViewElementStates.ReadOnly) != 0)
+						state |= AccessibleStates.ReadOnly;
+					if (!IsHeader) {
+						state |= AccessibleStates.Selectable;
+						if (CanSelect)
+							state |= AccessibleStates.Focusable;
+						if (Owner.Selected)
+							state |= AccessibleStates.Selected;
+						if (Grid.ContainsFocus && ReferenceEquals (Grid.CurrentCell, Owner))
+							state |= AccessibleStates.Focused;
 					}
-					else {
-						return AccessibleStates.Focused;
-					}
+					return state;
 				}
 			}
-
 			public override string Value {
 				get {
-					if (dataGridViewCell.FormattedValue == null) {
-						return "(null)";
-					}
-					return dataGridViewCell.FormattedValue.ToString();
+					if (!Available)
+						return string.Empty;
+					object value = IsHeader ? Owner.Value : Owner.FormattedValue;
+					return value == null ? string.Empty : value.ToString ();
 				}
 				set {
-					if (owner == null)
-						throw new InvalidOperationException ("owner is null");
-						
-					throw new NotImplementedException ();
-				}
-			}
-
-			public override void DoDefaultAction () {
-				if (dataGridViewCell.DataGridView.EditMode != DataGridViewEditMode.EditProgrammatically) {
-					if (dataGridViewCell.IsInEditMode) {
-						// commit edit
+					if (!CanEdit || !Activate ())
+						return;
+					if (!Owner.IsInEditMode && !Grid.BeginEdit (true))
+						return;
+					// Use the real editor: EndEdit owns parsing, validation and DataError.
+					ComboBox combo = Grid.EditingControl as ComboBox;
+					if (combo != null) {
+						int choice = -1;
+						for (int i = 0; i < combo.Items.Count; i++)
+							if (string.Equals (combo.GetItemText (combo.Items [i]), value ?? string.Empty, StringComparison.CurrentCulture)) {
+								choice = i;
+								break;
+							}
+						if (choice < 0)
+							return;
+						combo.SelectedIndex = choice;
+						combo.Text = combo.GetItemText (combo.Items [choice]);
+					} else {
+						TextBox text = Grid.EditingControl as TextBox;
+						if (text == null)
+							return;
+						text.Text = value ?? string.Empty;
 					}
-					else {
-						// begin edit
-					}
+					Grid.EndEdit ();
 				}
 			}
-
-			public override AccessibleObject GetChild (int index) {
-				throw new NotImplementedException();
+			private bool Activate ()
+			{
+				if (!CanSelect || IsHeader)
+					return false;
+				Grid.Focus ();
+				Grid.CurrentCell = Owner;
+				return Available && ReferenceEquals (Grid.CurrentCell, Owner);
 			}
-
-			public override int GetChildCount () {
-				if (dataGridViewCell.IsInEditMode) {
-					return 1;
+			public override void DoDefaultAction ()
+			{
+				if (!CanEdit || !Activate ())
+					return;
+				if (Owner.IsInEditMode)
+					Grid.EndEdit ();
+				else if (Grid.BeginEdit (true) && Grid.EditingControl != null)
+					Grid.EditingControl.Focus ();
+			}
+			public override int GetChildCount () { return 0; }
+			public override AccessibleObject GetChild (int index) { return null; }
+			public override AccessibleObject GetFocused ()
+			{
+				return (State & AccessibleStates.Focused) != 0 ? this : null;
+			}
+			public override AccessibleObject GetSelected ()
+			{
+				return (State & AccessibleStates.Selected) != 0 ? this : null;
+			}
+			public override AccessibleObject Navigate (AccessibleNavigation direction)
+			{
+				if (!Available || !IsVisible)
+					return null;
+				if (direction == AccessibleNavigation.Up || direction == AccessibleNavigation.Down) {
+					int step = direction == AccessibleNavigation.Up ? -1 : 1;
+					int start = Owner.RowIndex;
+					for (int i = start + step; i >= 0 && i < Grid.Rows.Count; i += step)
+						if (Grid.Rows [i].Visible)
+							return Owner is DataGridViewRowHeaderCell ? Grid.Rows [i].HeaderCell.AccessibilityObject :
+								Grid.Rows [i].Cells [Owner.ColumnIndex].AccessibilityObject;
+					if (step < 0 && Grid.ColumnHeadersVisible && Owner.ColumnIndex >= 0)
+						return Owner.OwningColumn.HeaderCell.AccessibilityObject;
+					return null;
 				}
-				return -1;
-			}
-
-			public override AccessibleObject GetFocused () {
+				int delta;
+				if (direction == AccessibleNavigation.Next || direction == AccessibleNavigation.Right)
+					delta = 1;
+				else if (direction == AccessibleNavigation.Previous || direction == AccessibleNavigation.Left)
+					delta = -1;
+				else
+					return null;
+				AccessibleObject parent = Parent;
+				for (int i = 0; i < parent.GetChildCount (); i++)
+					if (ReferenceEquals (parent.GetChild (i), this))
+						return parent.GetChild (i + delta);
 				return null;
 			}
-
-			public override AccessibleObject GetSelected () {
-				return null;
+			public override void Select (AccessibleSelection flags)
+			{
+				if (!CanSelect || IsHeader)
+					return;
+				if ((flags & AccessibleSelection.TakeFocus) != 0 && !Activate ())
+					return;
+				if ((flags & AccessibleSelection.TakeSelection) != 0)
+					Grid.ClearSelection ();
+				if ((flags & (AccessibleSelection.TakeSelection | AccessibleSelection.AddSelection)) != 0)
+					Owner.Selected = true;
+				if ((flags & AccessibleSelection.RemoveSelection) != 0)
+					Owner.Selected = false;
 			}
-
-			public override AccessibleObject Navigate (AccessibleNavigation navigationDirection) {
-				switch (navigationDirection) {
-					case AccessibleNavigation.Right:
-						break;
-					case AccessibleNavigation.Left:
-						break;
-					case AccessibleNavigation.Next:
-						break;
-					case AccessibleNavigation.Previous:
-						break;
-					case AccessibleNavigation.Up:
-						break;
-					case AccessibleNavigation.Down:
-						break;
-					default:
-						return null;
-				}
-				return null;
-			}
-
-			public override void Select (AccessibleSelection flags) {
-				switch (flags) {
-					case AccessibleSelection.TakeFocus:
-						dataGridViewCell.dataGridViewOwner.Focus();
-						break;
-					case AccessibleSelection.TakeSelection:
-						//dataGridViewCell.Focus();
-						break;
-					case AccessibleSelection.AddSelection:
-						dataGridViewCell.dataGridViewOwner.SelectedCells.InternalAdd(dataGridViewCell);
-						break;
-					case AccessibleSelection.RemoveSelection:
-						dataGridViewCell.dataGridViewOwner.SelectedCells.InternalRemove(dataGridViewCell);
-						break;
-				}
-			}
-
 		}
 	}
 

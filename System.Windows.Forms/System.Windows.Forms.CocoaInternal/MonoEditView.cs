@@ -249,7 +249,7 @@ namespace System.Windows.Forms.CocoaInternal
 		public override bool AccessibilityEnabled => Control.FromHandle(Handle)?.Enabled ?? false;
 		
 		[Export("accessibilityIsValueAttributeSettable")]
-		public virtual bool AccessibilityIsValueAttributeSettable() => true;
+		public override bool AccessibilityIsValueAttributeSettable() => true;
 
 		public override NSObject AccessibilityValue
 		{

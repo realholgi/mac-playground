@@ -34,6 +34,13 @@ using System.Text;
 using System.Collections.Generic;
 
 namespace System.Windows.Forms {
+	internal interface IDataGridViewAccessibleNode
+	{
+		DataGridView Grid { get; }
+		DataGridViewRow Row { get; }
+		DataGridViewCell Cell { get; }
+	}
+
 
 	[ComVisibleAttribute(true)]
 	[ClassInterfaceAttribute(ClassInterfaceType.AutoDispatch)]
@@ -3534,7 +3541,10 @@ namespace System.Windows.Forms {
 		protected override void OnBindingContextChanged (EventArgs e)
 		{
 			base.OnBindingContextChanged(e);
-			ReBind();
+			// An unbound grid has nothing to rebind. Resetting its current cell
+			// here can commit an editor while its combo choices are initializing.
+			if (DataSource != null)
+				ReBind();
 		}
 
 		protected virtual void OnBorderStyleChanged (EventArgs e)
@@ -6748,108 +6758,214 @@ namespace System.Windows.Forms {
 			
 		}
 
-		[ComVisibleAttribute(true)]
-		protected class DataGridViewAccessibleObject : ControlAccessibleObject {
-
-			public DataGridViewAccessibleObject (DataGridView owner) : base (owner){
-			}
-
-			public override AccessibleRole Role {
-				get { return base.Role; }
-			}
-
-			public override string Name {
-				get { return base.Name; }
-			}
-			
-			public override AccessibleObject GetChild (int index) {
-				return base.GetChild(index);
-			}
-
-			public override int GetChildCount () {
-				return base.GetChildCount();
-			}
-
-			public override AccessibleObject GetFocused () {
-				return base.GetFocused();
-			}
-
-			public override AccessibleObject GetSelected () {
-				return base.GetSelected();
-			}
-
-			public override AccessibleObject HitTest (int x, int y) {
-				return base.HitTest(x, y);
-			}
-
-			public override AccessibleObject Navigate( AccessibleNavigation navigationDirection) {
-				return base.Navigate(navigationDirection);
-			}
-
+		internal bool AccessibilityAvailable {
+			get { return !IsDisposed && !Disposing; }
 		}
-		
-		[ComVisible (true)]
-		protected class DataGridViewTopRowAccessibleObject : AccessibleObject
+
+		internal DataGridViewColumn AccessibilityColumn (int index)
 		{
-			#region Constructors
-			public DataGridViewTopRowAccessibleObject ()
-			{
+			if (index < 0 || !AccessibilityAvailable)
+				return null;
+			foreach (DataGridViewColumn column in columns.ColumnDisplayIndexSortedArrayList)
+				if (column.Visible && index-- == 0)
+					return column;
+			return null;
+		}
+
+		internal int AccessibilityColumnCount {
+			get {
+				int count = 0;
+				if (AccessibilityAvailable)
+					foreach (DataGridViewColumn column in Columns)
+						if (column.Visible)
+							count++;
+				return count;
 			}
-			
-			public DataGridViewTopRowAccessibleObject (DataGridView owner)
+		}
+
+		internal bool AccessibilityHasRow (DataGridViewRow row)
+		{
+			return AccessibilityAvailable && row != null && !row.AccessibilityDisposed && row.Index >= 0 &&
+				row.Index < Rows.Count && ReferenceEquals (Rows [row.Index], row);
+		}
+
+		internal AccessibleStates AccessibilityState (Rectangle bounds)
+		{
+			if (!AccessibilityAvailable)
+				return AccessibleStates.Unavailable | AccessibleStates.Offscreen;
+			AccessibleStates state = Enabled ? AccessibleStates.None : AccessibleStates.Unavailable;
+			if (!Visible)
+				state |= AccessibleStates.Invisible;
+			if (!Visible || bounds.IsEmpty || !RectangleToScreen (ClientRectangle).IntersectsWith (bounds))
+				state |= AccessibleStates.Offscreen;
+			return state;
+		}
+
+		internal AccessibleObject AccessibilityHeaderRow {
+			get { return ((DataGridViewAccessibleObject) AccessibilityObject).HeaderRow; }
+		}
+
+		[ComVisibleAttribute(true)]
+		protected class DataGridViewAccessibleObject : ControlAccessibleObject, IDataGridViewAccessibleNode {
+			private readonly DataGridView grid;
+			private DataGridViewTopRowAccessibleObject headerRow;
+
+			public DataGridViewAccessibleObject (DataGridView owner) : base (owner)
 			{
-				this.owner = owner;
+				grid = owner;
 			}
-			#endregion
-			
-			#region Public Methods
+
+			public DataGridView Grid { get { return grid; } }
+			public DataGridViewRow Row { get { return null; } }
+			public DataGridViewCell Cell { get { return null; } }
+			internal AccessibleObject HeaderRow {
+				get { return headerRow ?? (headerRow = new DataGridViewTopRowAccessibleObject (grid)); }
+			}
+			public override AccessibleRole Role { get { return AccessibleRole.Table; } }
+			public override string Name { get { return base.Name; } }
+			public override AccessibleStates State {
+				get {
+					AccessibleStates state = grid.AccessibilityState (Bounds);
+					if (grid.AccessibilityAvailable) {
+						if (grid.CanFocus)
+							state |= AccessibleStates.Focusable;
+						if (grid.ContainsFocus)
+							state |= AccessibleStates.Focused;
+						if (grid.ReadOnly)
+							state |= AccessibleStates.ReadOnly;
+					}
+					return state;
+				}
+			}
+
 			public override AccessibleObject GetChild (int index)
 			{
-				return base.GetChild (index);
+				if (index < 0 || !grid.AccessibilityAvailable)
+					return null;
+				if (grid.ColumnHeadersVisible) {
+					if (index-- == 0)
+						return HeaderRow;
+				}
+				foreach (DataGridViewRow row in grid.Rows)
+					if (row.Visible && index-- == 0)
+						return row.AccessibilityObject;
+				return null;
 			}
 
 			public override int GetChildCount ()
 			{
-				return base.GetChildCount ();
+				if (!grid.AccessibilityAvailable)
+					return 0;
+				int count = grid.ColumnHeadersVisible ? 1 : 0;
+				foreach (DataGridViewRow row in grid.Rows)
+					if (row.Visible)
+						count++;
+				return count;
 			}
 
-			public override AccessibleObject Navigate (AccessibleNavigation navigationDirection)
+			public override AccessibleObject GetFocused ()
 			{
-				return base.Navigate (navigationDirection);
-			}
-			#endregion
-			
-			#region Public Properties
-			public override Rectangle Bounds {
-				get { return base.Bounds; }
-			}
-			
-			public override string Name {
-				get { return base.Name; }
+				return grid.AccessibilityAvailable && grid.ContainsFocus && grid.CurrentCell != null &&
+					grid.CurrentCell.Visible ? grid.CurrentCell.AccessibilityObject : null;
 			}
 
+			public override AccessibleObject GetSelected ()
+			{
+				if (!grid.AccessibilityAvailable)
+					return null;
+				if (grid.CurrentCell != null && grid.CurrentCell.Visible && grid.CurrentCell.Selected)
+					return grid.CurrentCell.AccessibilityObject;
+				foreach (DataGridViewRow row in grid.Rows) {
+					if (!row.Visible)
+						continue;
+					if (row.Selected)
+						return row.AccessibilityObject;
+					AccessibleObject selected = row.AccessibilityObject.GetSelected ();
+					if (selected != null)
+						return selected;
+				}
+				return null;
+			}
+
+			public override AccessibleObject HitTest (int x, int y)
+			{
+				if (!grid.AccessibilityAvailable || !Bounds.Contains (x, y))
+					return null;
+				Point point = grid.PointToClient (new Point (x, y));
+				HitTestInfo hit = grid.HitTest (point.X, point.Y);
+				if (hit.Type == DataGridViewHitTestType.ColumnHeader && hit.ColumnIndex >= 0)
+					return grid.Columns [hit.ColumnIndex].HeaderCell.AccessibilityObject;
+				if (hit.RowIndex >= 0 && hit.RowIndex < grid.Rows.Count) {
+					DataGridViewRow row = grid.Rows [hit.RowIndex];
+					if (hit.Type == DataGridViewHitTestType.RowHeader)
+						return row.HeaderCell.AccessibilityObject;
+					if (hit.ColumnIndex >= 0)
+						return row.Cells [hit.ColumnIndex].AccessibilityObject;
+					return row.AccessibilityObject;
+				}
+				return this;
+			}
+
+			public override AccessibleObject Navigate (AccessibleNavigation direction)
+			{
+				if (direction == AccessibleNavigation.FirstChild)
+					return GetChild (0);
+				if (direction == AccessibleNavigation.LastChild)
+					return GetChild (GetChildCount () - 1);
+				return base.Navigate (direction);
+			}
+		}
+
+		[ComVisible (true)]
+		protected class DataGridViewTopRowAccessibleObject : AccessibleObject, IDataGridViewAccessibleNode
+		{
+			private DataGridView grid;
+			public DataGridViewTopRowAccessibleObject () {}
+			public DataGridViewTopRowAccessibleObject (DataGridView owner) { grid = owner; }
+			public DataGridView Grid { get { return grid; } }
+			public DataGridViewRow Row { get { return null; } }
+			public DataGridViewCell Cell { get { return null; } }
 			public DataGridView Owner {
-				get { return (DataGridView)owner; }
-				set { 
-					if (owner != null)
+				get { return grid; }
+				set {
+					if (grid != null)
 						throw new InvalidOperationException ("owner has already been set");
-				
-					owner = value;
+					grid = value;
 				}
 			}
-			
-			public override AccessibleObject Parent {
-				get { return base.Parent; }
+			public override AccessibleObject Parent { get { return grid == null ? null : grid.AccessibilityObject; } }
+			public override AccessibleRole Role { get { return AccessibleRole.Row; } }
+			public override string Name { get { return string.Empty; } }
+			public override string Value { get { return string.Empty; } }
+			public override Rectangle Bounds {
+				get {
+					if (grid == null || !grid.AccessibilityAvailable || !grid.ColumnHeadersVisible)
+						return Rectangle.Empty;
+					return grid.RectangleToScreen (new Rectangle (0, grid.BorderWidth, grid.ClientSize.Width, grid.ColumnHeadersHeight));
+				}
 			}
-
-			public override AccessibleRole Role {
-				get { return base.Role; }
+			public override AccessibleStates State {
+				get { return grid == null ? AccessibleStates.Unavailable : grid.AccessibilityState (Bounds) | AccessibleStates.ReadOnly; }
 			}
-
-			public override string Value {
-				get { return base.Value; }
+			public override int GetChildCount ()
+			{
+				return grid != null && grid.ColumnHeadersVisible ? grid.AccessibilityColumnCount : 0;
 			}
-			#endregion
+			public override AccessibleObject GetChild (int index)
+			{
+				DataGridViewColumn column = grid != null && grid.ColumnHeadersVisible ? grid.AccessibilityColumn (index) : null;
+				return column == null ? null : column.HeaderCell.AccessibilityObject;
+			}
+			public override AccessibleObject Navigate (AccessibleNavigation direction)
+			{
+				if (direction == AccessibleNavigation.FirstChild)
+					return GetChild (0);
+				if (direction == AccessibleNavigation.LastChild)
+					return GetChild (GetChildCount () - 1);
+				if (direction == AccessibleNavigation.Next || direction == AccessibleNavigation.Down)
+					return Parent == null ? null : Parent.GetChild (1);
+				return null;
+			}
 		}
 	}
 }

@@ -531,6 +531,34 @@ namespace System.Windows.Forms
 			base.CreateHandle ();
 		}
 
+		protected override AccessibleObject CreateAccessibilityInstance() => new TrackBarAccessibleObject(this);
+
+		[ComVisible(true)]
+		public class TrackBarAccessibleObject : ControlAccessibleObject
+		{
+			private readonly TrackBar trackBar;
+
+			public TrackBarAccessibleObject(TrackBar owner) : base(owner) => trackBar = owner;
+
+			public override AccessibleRole Role => AccessibleRole.Slider;
+			public override string Value
+			{
+				get => trackBar.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+				set
+				{
+					if (trackBar.Enabled && trackBar.Visible && !trackBar.IsDisposed &&
+						int.TryParse(value, System.Globalization.NumberStyles.Integer,
+							System.Globalization.CultureInfo.InvariantCulture, out var number) &&
+						number >= trackBar.Minimum && number <= trackBar.Maximum)
+						trackBar.Value = number;
+				}
+			}
+
+			public override AccessibleStates State =>
+				(trackBar.Enabled && trackBar.Visible && !trackBar.IsDisposed ? AccessibleStates.Focusable : AccessibleStates.Unavailable) |
+				(trackBar.Focused ? AccessibleStates.Focused : AccessibleStates.None);
+		}
+
 		protected override void SetBoundsCore (int x, int y,int width, int height, BoundsSpecified specified)
 		{
 			if (AutoSize) {

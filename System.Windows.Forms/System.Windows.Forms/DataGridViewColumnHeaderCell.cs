@@ -45,7 +45,9 @@ namespace System.Windows.Forms {
 		}
 
 		public override object Clone () {
-			return MemberwiseClone();
+			DataGridViewColumnHeaderCell clone = (DataGridViewColumnHeaderCell) MemberwiseClone ();
+			clone.ResetAccessibilityObject ();
+			return clone;
 		}
 
 		public override ContextMenuStrip GetInheritedContextMenuStrip (int rowIndex) {
@@ -283,7 +285,7 @@ namespace System.Windows.Forms {
 			}
 
 			public override AccessibleRole Role {
-				get { return base.Role; }
+				get { return AccessibleRole.ColumnHeader; }
 			}
 
 			public override AccessibleStates State {

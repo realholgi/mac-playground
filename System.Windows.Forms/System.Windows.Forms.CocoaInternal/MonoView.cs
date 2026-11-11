@@ -499,11 +499,70 @@ namespace System.Windows.Forms.CocoaInternal
 
 		#region Accessibility
 
+		private GridAccessibilityBridge gridAccessibility;
+		private GridAccessibilityBridge AccessibleGrid
+		{
+			get
+			{
+				if (Control.FromHandle(Handle) is not DataGridView grid || grid.IsDisposed)
+					return null;
+				return gridAccessibility ??= new GridAccessibilityBridge(this, driver, grid);
+			}
+		}
+
+		public override NSObject[] AccessibilityChildren => AccessibleGrid is GridAccessibilityBridge grid
+			? grid.Children(base.AccessibilityChildren) : base.AccessibilityChildren;
+		public override NSObject[] AccessibilityRows => AccessibleGrid?.Rows ?? base.AccessibilityRows;
+		public override NSObject[] AccessibilityColumnHeaderUIElements => AccessibleGrid?.ColumnHeaders ?? base.AccessibilityColumnHeaderUIElements;
+		public override nint AccessibilityRowCount => AccessibleGrid?.RowCount ?? base.AccessibilityRowCount;
+		public override nint AccessibilityColumnCount => AccessibleGrid?.ColumnCount ?? base.AccessibilityColumnCount;
+		public override NSObject[] AccessibilitySelectedCells => AccessibleGrid?.SelectedCells ?? base.AccessibilitySelectedCells;
+		public override NSObject[] AccessibilitySelectedRows => AccessibleGrid?.SelectedRows ?? base.AccessibilitySelectedRows;
+		public override NSObject[] AccessibilitySelectedChildren => AccessibleGrid?.SelectedCells ?? base.AccessibilitySelectedChildren;
+
+		public override NSObject GetAccessibilityCellForColumn(nint column, nint row) =>
+			AccessibleGrid is GridAccessibilityBridge grid ? grid.CellAt(column, row) : base.GetAccessibilityCellForColumn(column, row);
+
+		[Export("accessibilityFocusedUIElement")]
+		public NSObject GridFocusedElement() => AccessibleGrid?.FocusedElement ?? Window?.FirstResponder;
+
+		[Export("accessibilityHitTest:")]
+		public NSObject GridHitTest(CGPoint point)
+		{
+			var grid = AccessibleGrid;
+			if (grid == null)
+			{
+				if (Window == null)
+					return this;
+				var windowPoint = Window.ConvertPointFromScreen(point);
+				var parentPoint = Superview != null ? Superview.ConvertPointFromView(windowPoint, null) : windowPoint;
+				return base.HitTest(parentPoint) ?? this;
+			}
+			// The real native editor remains interactive above the virtual cell.
+			if (grid.Grid.EditingControl is Control editor && editor.Visible &&
+				driver.MonoToNativeScreen(editor.RectangleToScreen(editor.ClientRectangle)).Contains(point))
+				return editor.Handle.ToNSView();
+			return grid.HitTest(point);
+		}
+
+		protected override void Dispose(bool disposing)
+		{
+			if (disposing)
+			{
+				gridAccessibility?.Dispose();
+				gridAccessibility = null;
+			}
+			base.Dispose(disposing);
+		}
+
 		public override bool IsAccessibilitySelectorAllowed(Selector selector)
 		{
 			switch (selector.Name)
 			{
 				case "accessibilityValue": return Control.FromHandle(Handle).SupportsAccessibilityValue();
+				case "setAccessibilityValue:": return AccessibilityIsValueAttributeSettable();
+				case "accessibilityPerformIncrement":
+				case "accessibilityPerformDecrement": return CanSetSlider;
 			}
 
 			return base.IsAccessibilitySelectorAllowed(selector);
@@ -530,9 +589,66 @@ namespace System.Windows.Forms.CocoaInternal
 			get => Control.FromHandle(Handle)?.AccessibilityLabel();
 		}
 
+		public override bool AccessibilityEnabled => Control.FromHandle(Handle)?.Enabled ?? false;
+
+		private TrackBar AccessibleSlider => Control.FromHandle(Handle) as TrackBar;
+		private bool CanSetSlider => AccessibleSlider is TrackBar slider &&
+			slider.Enabled && slider.Visible && !slider.IsDisposed;
+
+		[Export("accessibilityIsValueAttributeSettable")]
+		public virtual bool AccessibilityIsValueAttributeSettable() => CanSetSlider;
+
+		[Export("accessibilityIsAttributeSettable:")]
+		public virtual bool AccessibilityIsAttributeSettable(NSString attribute)
+		{
+			if (attribute?.ToString() == "AXValue")
+				return AccessibilityIsValueAttributeSettable();
+			return attribute?.ToString() == "AXFocused" && Control.FromHandle(Handle) is Control control &&
+				control.Enabled && control.Visible && !control.IsDisposed && control.CanFocus;
+		}
+
+		[Export("accessibilityMinValue")]
+		public new NSObject AccessibilityMinValue() => AccessibleSlider is TrackBar slider ? new NSNumber(slider.Minimum) : null;
+
+		[Export("accessibilityMaxValue")]
+		public new NSObject AccessibilityMaxValue() => AccessibleSlider is TrackBar slider ? new NSNumber(slider.Maximum) : null;
+
+		[Export("accessibilityOrientation")]
+		public new NSString AccessibilityOrientation() => AccessibleSlider is TrackBar slider
+			? new NSString(slider.Orientation == Orientation.Horizontal ? "AXHorizontalOrientation" : "AXVerticalOrientation") : null;
+
+		[Export("accessibilityPerformIncrement")]
+		public override bool AccessibilityPerformIncrement() => ChangeSlider(1);
+
+		[Export("accessibilityPerformDecrement")]
+		public override bool AccessibilityPerformDecrement() => ChangeSlider(-1);
+
+		private bool ChangeSlider(int direction)
+		{
+			if (!CanSetSlider)
+				return false;
+			var slider = AccessibleSlider;
+			var next = (int)System.Math.Clamp((long)slider.Value + (long)direction * slider.SmallChange,
+				slider.Minimum, slider.Maximum);
+			if (next == slider.Value)
+				return false;
+			slider.Value = next;
+			return true;
+		}
+
 		public override NSObject AccessibilityValue
 		{
-			get => Control.FromHandle(Handle)?.AccessibilityValue();
+			get => AccessibleSlider is TrackBar slider ? new NSNumber(slider.Value) : Control.FromHandle(Handle)?.AccessibilityValue();
+			set
+			{
+				if (!CanSetSlider || value is not NSNumber number)
+					return;
+				var numeric = number.DoubleValue;
+				var slider = AccessibleSlider;
+				if (double.IsFinite(numeric) && numeric == System.Math.Truncate(numeric) &&
+					numeric >= slider.Minimum && numeric <= slider.Maximum)
+					slider.Value = (int)numeric;
+			}
 		}
 
 		#endregion
