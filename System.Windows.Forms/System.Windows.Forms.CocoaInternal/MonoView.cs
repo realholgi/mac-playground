@@ -510,6 +510,8 @@ namespace System.Windows.Forms.CocoaInternal
 			}
 		}
 
+		private TreeViewAccessibilityBridge treeAccessibility;
+		private NSObject[] compositeChildren;
 		private NSView[] nativeChildViews;
 		private bool[] nativeChildHidden;
 		private NSObject[] nativeAccessibilityChildren;
@@ -520,6 +522,7 @@ namespace System.Windows.Forms.CocoaInternal
 				if (current is MonoView view)
 				{
 					view.nativeAccessibilityChildren = null;
+					view.compositeChildren = null;
 				}
 		}
 
@@ -553,22 +556,44 @@ namespace System.Windows.Forms.CocoaInternal
 			return nativeAccessibilityChildren = NSAccessibility.GetUnignoredChildren(original);
 		}
 
+		private TreeViewAccessibilityBridge AccessibleTree => Control.FromHandle(Handle) is TreeView tree && !tree.IsDisposed
+			? treeAccessibility ??= new TreeViewAccessibilityBridge(this, driver, tree) : null;
 
-		public override NSObject[] AccessibilityChildren => AccessibleGrid is GridAccessibilityBridge grid
-			? grid.Children(NativeAccessibilityChildren()) : NativeAccessibilityChildren();
-		public override NSObject[] AccessibilityRows => AccessibleGrid?.Rows ?? base.AccessibilityRows;
+		public override NSObject[] AccessibilityChildren
+		{
+			get
+			{
+				if (AccessibleGrid is GridAccessibilityBridge grid)
+					return grid.Children(NativeAccessibilityChildren());
+				var items = AccessibleTree?.Children;
+				if (items == null) return NativeAccessibilityChildren();
+				var native = NativeAccessibilityChildren();
+				bool same = compositeChildren != null && compositeChildren.Length == items.Length + native.Length;
+				for (int i = 0; same && i < items.Length; i++) same = ReferenceEquals(compositeChildren[i], items[i]);
+				for (int i = 0; same && i < native.Length; i++) same = ReferenceEquals(compositeChildren[items.Length + i], native[i]);
+				if (!same)
+				{
+					compositeChildren = new NSObject[items.Length + native.Length];
+					Array.Copy(items, compositeChildren, items.Length);
+					Array.Copy(native, 0, compositeChildren, items.Length, native.Length);
+				}
+				return compositeChildren;
+			}
+		}
+		public override NSObject[] AccessibilityRows => AccessibleGrid?.Rows ?? AccessibleTree?.Rows ?? base.AccessibilityRows;
 		public override NSObject[] AccessibilityColumnHeaderUIElements => AccessibleGrid?.ColumnHeaders ?? base.AccessibilityColumnHeaderUIElements;
-		public override nint AccessibilityRowCount => AccessibleGrid?.RowCount ?? base.AccessibilityRowCount;
+		public override nint AccessibilityRowCount => AccessibleGrid?.RowCount ?? (AccessibleTree is TreeViewAccessibilityBridge tree
+			? tree.Rows.Length : base.AccessibilityRowCount);
 		public override nint AccessibilityColumnCount => AccessibleGrid?.ColumnCount ?? base.AccessibilityColumnCount;
 		public override NSObject[] AccessibilitySelectedCells => AccessibleGrid?.SelectedCells ?? base.AccessibilitySelectedCells;
-		public override NSObject[] AccessibilitySelectedRows => AccessibleGrid?.SelectedRows ?? base.AccessibilitySelectedRows;
-		public override NSObject[] AccessibilitySelectedChildren => AccessibleGrid?.SelectedCells ?? base.AccessibilitySelectedChildren;
+		public override NSObject[] AccessibilitySelectedRows => AccessibleGrid?.SelectedRows ?? AccessibleTree?.SelectedRows ?? base.AccessibilitySelectedRows;
+		public override NSObject[] AccessibilitySelectedChildren => AccessibleGrid?.SelectedCells ?? AccessibleTree?.SelectedRows ?? base.AccessibilitySelectedChildren;
 
 		public override NSObject GetAccessibilityCellForColumn(nint column, nint row) =>
 			AccessibleGrid is GridAccessibilityBridge grid ? grid.CellAt(column, row) : base.GetAccessibilityCellForColumn(column, row);
 
 		[Export("accessibilityFocusedUIElement")]
-		public NSObject GridFocusedElement() => AccessibleGrid?.FocusedElement ?? Window?.FirstResponder;
+		public NSObject AccessibilityFocusedElement() => AccessibleGrid?.FocusedElement ?? AccessibleTree?.FocusedElement ?? Window?.FirstResponder;
 
 		[Export("accessibilityHitTest:")]
 		public NSObject GridHitTest(CGPoint point)
@@ -576,6 +601,8 @@ namespace System.Windows.Forms.CocoaInternal
 			var grid = AccessibleGrid;
 			if (grid == null)
 			{
+				var item = AccessibleTree?.HitTest(point);
+				if (item != null) return item;
 				if (Window == null)
 					return this;
 				var windowPoint = Window.ConvertPointFromScreen(point);
@@ -595,6 +622,9 @@ namespace System.Windows.Forms.CocoaInternal
 			{
 				gridAccessibility?.Dispose();
 				gridAccessibility = null;
+				treeAccessibility?.Dispose();
+				treeAccessibility = null;
+				compositeChildren = null;
 				nativeChildViews = null;
 				nativeChildHidden = null;
 				nativeAccessibilityChildren = null;
@@ -624,7 +654,15 @@ namespace System.Windows.Forms.CocoaInternal
 
 		public override string AccessibilityRole
 		{
-			get => Control.FromHandle(Handle)?.AccessibilityRole();
+			get
+			{
+				var control = Control.FromHandle(Handle);
+				if (control?.AccessibleRole == AccessibleRole.Default)
+				{
+					if (control is TreeView) return "AXOutline";
+				}
+				return control?.AccessibilityRole();
+			}
 		}
 
 		public override string AccessibilityTitle

@@ -90,8 +90,17 @@ namespace System.Windows.Forms {
 			set {
 				if (index < 0 || index >= Count)
 					throw new ArgumentOutOfRangeException ("index");
+				TreeNode replaced = nodes [index];
 				SetupNode (value);
 				nodes [index] = value;
+				if (!ReferenceEquals (replaced, value)) {
+					replaced.parent = null;
+					TreeView tree = owner?.TreeView;
+					if (tree != null) {
+						tree.OnUIACollectionChanged (owner, new CollectionChangeEventArgs (CollectionChangeAction.Remove, replaced));
+						tree.OnUIACollectionChanged (owner, new CollectionChangeEventArgs (CollectionChangeAction.Add, value));
+					}
+				}
 			}
 		}
 
@@ -276,6 +285,7 @@ namespace System.Windows.Forms {
 				Sort (owner.TreeView.TreeViewNodeSorter);
 
 			SetupNode (node);
+			owner?.TreeView?.OnUIACollectionChanged (owner, new CollectionChangeEventArgs (CollectionChangeAction.Add, node));
 		}
 
 		public virtual TreeNode Insert (int index, string key, string text)

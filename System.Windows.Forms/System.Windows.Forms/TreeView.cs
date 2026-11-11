@@ -695,6 +695,7 @@ namespace System.Windows.Forms {
 			RecalculateVisibleOrder (root_node);
 			UpdateScrollBars (false);
 			Invalidate ();
+			((EventHandler) Events [UIANodesSortedEvent])?.Invoke (this, EventArgs.Empty);
 		}
 
 		void SetVScrollValue (int value)
@@ -2411,6 +2412,13 @@ namespace System.Windows.Forms {
 				eh (this, e);
 		}
 		
+		static readonly object UIANodesSortedEvent = new object ();
+
+		internal event EventHandler UIANodesSorted {
+			add { Events.AddHandler (UIANodesSortedEvent, value); }
+			remove { Events.RemoveHandler (UIANodesSortedEvent, value); }
+		}
+
 		static object UIACollectionChangedEvent = new object ();
 
 		internal event CollectionChangeEventHandler UIACollectionChanged {

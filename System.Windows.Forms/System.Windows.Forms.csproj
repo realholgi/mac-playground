@@ -893,6 +893,7 @@
     <Compile Include="System.Windows.Forms.CocoaInternal\Extensions.cs" />
     <Compile Include="System.Windows.Forms.CocoaInternal\AccessibleObjectElement.cs" />
     <Compile Include="System.Windows.Forms.CocoaInternal\ControlAccessibilityNotifications.cs" />
+    <Compile Include="System.Windows.Forms.CocoaInternal\TreeViewAccessibilityBridge.cs" />
     <Compile Include="System.Windows.Forms.CocoaInternal\IMacNativeControl.cs" />
     <Compile Include="System.Windows.Forms.CocoaInternal\KeysConverter.cs" />
     <Compile Include="System.Windows.Forms.CocoaInternal\ModalDialogContext.cs" />
