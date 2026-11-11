@@ -1014,6 +1014,7 @@ namespace System.Windows.Forms
 						+ " view or set ViewMode to false.");
 
 				virtual_mode = value;
+				AccessibilityVirtualItemsChanged?.Invoke(this, EventArgs.Empty);
 				Redraw (true);
 			}
 		}
@@ -1032,6 +1033,7 @@ namespace System.Windows.Forms
 					return;
 
 				virtual_list_size = value;
+				AccessibilityVirtualItemsChanged?.Invoke(this, EventArgs.Empty);
 				if (virtual_mode) {
 					focused_item_index = -1;
 					selected_indices.Reset ();
@@ -1460,6 +1462,7 @@ namespace System.Windows.Forms
 				header_control.Invalidate ();
 				item_control.Invalidate ();
 			}
+			AccessibilityColumnOrderChanged?.Invoke(this, EventArgs.Empty);
 		}
 
 		internal void AddColumn (ColumnHeader newCol, int index, bool redraw)
@@ -6039,6 +6042,8 @@ namespace System.Windows.Forms
 		static object UIAViewChangedEvent = new object ();
 		static object UIACheckBoxesChangedEvent = new object ();
 		static object UIAFocusedItemChangedEvent = new object ();
+		internal event EventHandler AccessibilityVirtualItemsChanged;
+		internal event EventHandler AccessibilityColumnOrderChanged;
 
 		internal Rectangle UIAHeaderControl {
 			get { return header_control.Bounds; }
