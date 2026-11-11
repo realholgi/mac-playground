@@ -3,8 +3,8 @@
 This is a mix of code that was developed during our effort to port eM Client to macOS. It is a hodgepodge of various projects and experiments. The notable ones are listed below. The code is released as-is.
 
 To test the experiments:
-* Make sure Xcode 27, .NET 10 SDK, and the matching macOS workload are installed (macOS 26.6 or newer for Xcode 27)
-* Run `dotnet workload restore` from the Terminal
+* Make sure Xcode 27.2 and .NET SDK 10.0.404 are installed (macOS 26.6 or newer for Xcode 27.2)
+* Run `dotnet workload install macos --version 10.0.404` from the Terminal
 * Open solution folder in Visual Studio Code or Visual Studio
 * Run the test application
 
@@ -51,7 +51,7 @@ logged-in graphical session (.NET 10 SDK, macOS workload, and Xcode 27 required)
 
 ```sh
 dotnet build tests/FormsTest.Test/FormsTest.Test.csproj
-tests/FormsTest.Test/bin/Debug/net10.0-macos27.0/osx-arm64/FormsTest.Test.app/Contents/MacOS/FormsTest.Test --result=/tmp/mac-playground-forms-tests.xml
+tests/FormsTest.Test/bin/Debug/net10.0-macos27.2/osx-arm64/FormsTest.Test.app/Contents/MacOS/FormsTest.Test --result=/tmp/mac-playground-forms-tests.xml
 ```
 
 Use `osx-x64` instead of `osx-arm64` on Intel Macs. The NUnitLite runner forces
@@ -104,7 +104,7 @@ an Apple Silicon Mac with the prerequisites above:
 ```sh
 dotnet test MacBridge.Test/MacBridge.Test.csproj --configuration Debug --runtime osx-arm64 --filter 'FullyQualifiedName~MacBridge.Test.MatrixTests'
 dotnet build tests/FormsTest.Test/FormsTest.Test.csproj --configuration Debug --runtime osx-arm64
-tests/FormsTest.Test/bin/Debug/net10.0-macos27.0/osx-arm64/FormsTest.Test.app/Contents/MacOS/FormsTest.Test --where 'class == FormsTest.Test.GraphicsTransformTests or class == FormsTest.Test.DataGridViewSortTests' --result=/tmp/mac-playground-regression-tests.xml
+tests/FormsTest.Test/bin/Debug/net10.0-macos27.2/osx-arm64/FormsTest.Test.app/Contents/MacOS/FormsTest.Test --where 'class == FormsTest.Test.GraphicsTransformTests or class == FormsTest.Test.DataGridViewSortTests' --result=/tmp/mac-playground-regression-tests.xml
 ```
 
 [The regression workflow](.github/workflows/regression-tests.yml) runs these

@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net10.0-macos27.0</TargetFramework>
+    <TargetFramework>net10.0-macos27.2</TargetFramework>
     <DefineConstants>NET_4_5</DefineConstants>
     <NoWarn>1699,618,612,809,3001,3002,3003</NoWarn>
     <EnableDefaultItems>false</EnableDefaultItems>
@@ -884,7 +884,7 @@
     <Compile Include="System.Windows.Forms\Win32DnD.cs" />
     <Compile Include="System.Windows.Forms\XplatUIWin32.cs" />
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-macos27.0'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-macos27.2'">
     <Compile Include="System.Windows.Forms.CocoaInternal\Cursor.cs" />
     <Compile Include="System.Windows.Forms.CocoaInternal\DataObjectPasteboard.cs" />
     <Compile Include="System.Windows.Forms.CocoaInternal\DataObjectProvider.cs" />

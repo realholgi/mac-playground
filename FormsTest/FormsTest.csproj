@@ -1,14 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net10.0-windows;net10.0-macos27.0</TargetFrameworks>
+    <TargetFrameworks>net10.0-windows;net10.0-macos27.2</TargetFrameworks>
     <MonoBundlingExtraArgs>--registrar:dynamic</MonoBundlingExtraArgs>
     <!-- <RuntimeIdentifier Condition="'$(TargetFramework)' != 'net10.0-windows'">osx-x64</RuntimeIdentifier> -->
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
     <DisableExtraReferences>true</DisableExtraReferences>
-    <DefineConstants Condition="'$(TargetFramework)' == 'net10.0-macos27.0'">$(DefineConstants);MAC</DefineConstants>
+    <DefineConstants Condition="'$(TargetFramework)' == 'net10.0-macos27.2'">$(DefineConstants);MAC</DefineConstants>
     <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
-    <OutputType Condition="'$(TargetFramework)' == 'net10.0-macos27.0'">Exe</OutputType>
+    <OutputType Condition="'$(TargetFramework)' == 'net10.0-macos27.2'">Exe</OutputType>
 	  <OutputType Condition="'$(TargetFramework)' == 'net10.0-windows'">WinExe</OutputType>
     <UseWindowsForms Condition="'$(TargetFramework)' == 'net10.0-windows'">true</UseWindowsForms>
     <UseMonoRuntime>false</UseMonoRuntime>
@@ -20,13 +20,13 @@
     <Product>FormsTest</Product>
     <Brand></Brand>
     <MonoBundlingExtraArgs>--registrar:static</MonoBundlingExtraArgs>
-    <SupportedOSPlatformVersion Condition="'$(TargetFramework)' == 'net10.0-macos27.0'">14</SupportedOSPlatformVersion>
+    <SupportedOSPlatformVersion Condition="'$(TargetFramework)' == 'net10.0-macos27.2'">14</SupportedOSPlatformVersion>
     <PathMap Condition="'$(Configuration)' == 'Release' OR $(Configuration.EndsWith('- Release'))">$(MSBuildProjectDirectory)/obj/$(Configuration)/$(TargetFramework)/$(RuntimeIdentifier)=.</PathMap>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="System.Resources.Extensions" Version="10.0.14" />
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-macos27.0'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-macos27.2'">
     <ProjectReference Include="..\System.Windows.Forms\System.Windows.Forms.csproj" />
     <ProjectReference Include="..\System.Drawing.Common\System.Drawing.Common.csproj" />
     <ProjectReference Include="..\MacApi\MacApi.csproj" />
@@ -247,7 +247,7 @@
     <Compile Include="Forms\MainForm.PrintPreview.cs" />
     <!--<Compile Include="Forms\DataGridForm.cs" />-->
     <Compile Include="Forms\DateTimeForm.cs" />
-    <Compile Include="Forms\NotificationsForm.cs" Condition="'$(TargetFramework)' == 'net10.0-macos27.0'" />
+    <Compile Include="Forms\NotificationsForm.cs" Condition="'$(TargetFramework)' == 'net10.0-macos27.2'" />
     <Compile Include="Controls\TextureBrushControl.cs" />
     <Compile Include="Controls\TextureBrushControl2.cs" />
     <Compile Include="Experiments\FileDescriptors.cs">
