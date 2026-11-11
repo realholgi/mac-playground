@@ -28,6 +28,8 @@ The Cocoa bridge exposes numeric check/radio states and TrackBar bounds/actions.
 
 Native accessibility presses use the managed default action; checkbox actions follow the normal click/`AutoCheck`/three-state pipeline. Control names (explicit `AccessibleName`, accessibility-object overrides, or mnemonic-free captions) are exposed as labels, while `AccessibleDescription` is exposed as help. Native metadata is refreshed across handle recreation. Managed custom views announce value, focus, layout, and selection changes; subscriptions are removed when their native handle is destroyed.
 
+Custom controls with the `EDIT` window class use `MonoEditView`: accessibility value and selected-text writes respect enabled, visible, read-only, and lifetime state; UTF-16 ranges are clamped safely; password contents are not exposed. Insertion-line and multiline/scrolled range geometry use the owner's edit messages. Such controls must implement the existing text/selection/replacement, `EM_LINEFROMCHAR`, and pointer-based `EM_POSFROMCHAR` contracts. Standard TextBox controls retain their native AppKit editors.
+
 `MacBridge.Test` uses NUnit 5 and PackageReference dependencies only. Run it with `dotnet test MacBridge.Test/MacBridge.Test.csproj`. Its active image-conversion test references `System.Drawing.Common` directly and loads its copied JPEG fixture from the test output directory, so the test project does not require external WinApi sources. The separate `MacBridge` project still requires the external `../../../WinApi` source tree linked by `MacBridge.csproj`; it is not included in this repository.
 
 The demo uses `System.Resources.Extensions` 10.0.14, and `MacBridge.Test` uses `Microsoft.NET.Test.Sdk` 18.11.0.
@@ -85,6 +87,7 @@ unavailable controls, grid cell identity across column reorder/hiding, detached-
 safety, validation-aware value edits, and grid/column/row/cell read-only behavior.
 Run it with the Forms runner's `--where 'class == FormsTest.Test.CocoaAccessibilityTests'`.
 `ControlAccessibilityTests` covers native actions and metadata, nested container updates, and handle recreation.
+`TextAccessibilityTests` covers custom EDIT selection, geometry, and protected values.
 Select all accessibility fixtures with `--where 'class =~ AccessibilityTests'`.
 Native AX properties/actions are covered; spoken VoiceOver announcements require an interactive check.
 The manual application remains available for visual rendering, native dialogs,

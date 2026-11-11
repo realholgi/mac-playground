@@ -1,7 +1,6 @@
 ﻿using System.Drawing;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Diagnostics;
 using System.Windows.Forms.Mac;
 using Foundation;
 using AppKit;
@@ -61,7 +60,8 @@ namespace System.Windows.Forms.CocoaInternal
 			}
 			set 
 			{
-				SetSelection((int)value.Location, (int)(value.Location + value.Length));
+				var range = ClampRange(value, GetText().Length);
+				SetSelection((int)range.Location, (int)(range.Location + range.Length));
 			}
 		}
 
@@ -77,23 +77,9 @@ namespace System.Windows.Forms.CocoaInternal
 
 		public NSAttributedString GetAttributedSubstring(NSRange proposedRange, out NSRange actualRange)
 		{
-			var text = GetText();
-
-			NSAttributedString result;
-			if (proposedRange.Location >= text.Length)
-			{
-				actualRange = new NSRange(text.Length, 0);
-				result = null;
-			}
-			else
-			{
-				var to = Math.Min(proposedRange.Location + proposedRange.Length, text.Length);
-				actualRange = new NSRange(proposedRange.Location, (nint)to - proposedRange.Location);
-				result = new NSAttributedString(text.Substring((int)actualRange.Location, (int)actualRange.Length));
-			}
-
-			//Debug.WriteLine($"attributedSubstringForProposedRange:{proposedRange}, actualRange:{actualRange} -> '{result}'");
-			return result;
+			var text = IsPassword ? string.Empty : GetText();
+			actualRange = ClampRange(proposedRange, text.Length);
+			return new NSAttributedString(text.Substring((int)actualRange.Location, (int)actualRange.Length));
 		}
 
 		public nuint GetCharacterIndex(CGPoint point)
@@ -193,22 +179,35 @@ namespace System.Windows.Forms.CocoaInternal
 
 		unsafe public virtual string GetText()
 		{
+			if (Owner == null)
+				return string.Empty;
 			var length = Math.Max(0, (int)Application.SendMessage(Handle, Msg.WM_GETTEXTLENGTH, IntPtr.Zero, IntPtr.Zero));
 			var buffer = new char[length + 1];
 			fixed (char* ptr = &buffer[0])
 			{
 				int n = (int)Application.SendMessage(Handle, Msg.WM_GETTEXT, (IntPtr)buffer.Length, new IntPtr(ptr));
-				return new string(buffer, 0, Math.Min(n, length));
+				return new string(buffer, 0, Math.Clamp(n, 0, length));
 			}
 		}
 
 		unsafe public virtual void SetText(string value)
 		{
-			this.NotImplemented(MethodBase.GetCurrentMethod());
+			if (!CanEdit)
+				return;
+			value ??= string.Empty;
+			var selection = SelectedRange;
+			fixed (char* ptr = value)
+				Application.SendMessage(Handle, Msg.WM_SETTEXT, IntPtr.Zero, new IntPtr(ptr));
+			NotifySelectionChanged(selection);
 		}
 
 		unsafe public void GetSelection(out int from, out int to)
 		{
+			if (Owner == null)
+			{
+				from = to = 0;
+				return;
+			}
 			var range = new int[] { 0, 0 };
 			fixed (int* start = &range[0], end = &range[1])
 				Application.SendMessage(Handle, Msg.EM_GETSEL, new IntPtr(start), new IntPtr(end));
@@ -234,55 +233,109 @@ namespace System.Windows.Forms.CocoaInternal
 
 		// Accessibility
 
-		public override string AccessibilityRole => "AXTextArea"; // Using Area instead of Field makes grammarly to react for some reason
+		// Custom EDIT controls use the WinForms edit-message contract. Ordinary TextBox
+		// controls create native NSTextField/NSTextView editors instead of this view.
+		Control Owner => Handle != IntPtr.Zero && Control.FromHandle(Handle) is Control c &&
+			!c.IsDisposed && !c.Disposing && c.IsHandleCreated ? c : null;
+
+		bool CanSelect => Owner is Control c && c.Enabled && c.Visible;
+		bool CanEdit => CanSelect && ((int)Style & 0x0800) == 0 &&
+			(Owner.AccessibilityObject.State & AccessibleStates.ReadOnly) == 0 &&
+			!(Owner is TextBoxBase box && box.ReadOnly);
+		bool IsPassword => ((int)Style & 0x0020) != 0 ||
+			Owner is TextBox { PasswordChar: not '\0' } ||
+			Owner is TextBox { UseSystemPasswordChar: true };
+
+		static NSRange ClampRange(NSRange range, int length)
+		{
+			if (range.Location < 0 || range.Length < 0)
+				return new NSRange(0, 0);
+			var start = (int)Math.Min(range.Location, length);
+			return new NSRange(start, Math.Min(range.Length, length - start));
+		}
+
+		public override string AccessibilityRole => IsPassword ? "AXTextField" : "AXTextArea";
+		public override string AccessibilitySubrole => IsPassword ? "AXSecureTextField" : base.AccessibilitySubrole;
 
 		public override bool IsAccessibilitySelectorAllowed(Selector selector)
 		{
 			switch (selector.Name)
 			{
 				case "accessibilityValue": return true;
+				case "setAccessibilityValue:":
+				case "setAccessibilitySelectedText:": return CanEdit;
+				case "setAccessibilitySelectedTextRange:": return CanSelect;
 			}
-
 			return base.IsAccessibilitySelectorAllowed(selector);
 		}
 
-		public override bool AccessibilityEnabled => Control.FromHandle(Handle)?.Enabled ?? false;
-		
+		public override bool AccessibilityEnabled => Owner?.Enabled ?? false;
+
 		[Export("accessibilityIsValueAttributeSettable")]
-		public override bool AccessibilityIsValueAttributeSettable() => true;
+		public override bool AccessibilityIsValueAttributeSettable() => CanEdit;
+
+		public override bool AccessibilityIsAttributeSettable(NSString attribute)
+		{
+			switch (attribute?.ToString())
+			{
+				case "AXValue":
+				case "AXSelectedText": return CanEdit;
+				case "AXSelectedTextRange": return CanSelect;
+			}
+			return base.AccessibilityIsAttributeSettable(attribute);
+		}
 
 		public override NSObject AccessibilityValue
 		{
-			get => new NSString(GetText());
+			get => new NSString(IsPassword ? string.Empty : GetText());
 			set => SetText(value?.ToString() ?? string.Empty);
 		}
 
 		[Export("accessibilitySetValue:forAttribute:")]
 		public virtual void AccessibilitySetValue(NSObject value, NSString attribute)
 		{
-			this.NotImplemented(MethodBase.GetCurrentMethod());
+			switch (attribute?.ToString())
+			{
+				case "AXValue": AccessibilityValue = value; break;
+				case "AXSelectedText": AccessibilitySelectedText = value?.ToString() ?? string.Empty; break;
+				case "AXSelectedTextRange" when value is NSValue range:
+					AccessibilitySelectedTextRange = range.RangeValue;
+					break;
+			}
 		}
 
-		public override nint AccessibilityNumberOfCharacters => GetText().Length;
+		public override nint AccessibilityNumberOfCharacters => IsPassword ? 0 : GetText().Length;
 
 		public override string AccessibilitySelectedText
 		{
 			get
 			{
-				var range = SelectedRange;
-				var text = GetText();
+				var text = IsPassword ? string.Empty : GetText();
+				var range = ClampRange(SelectedRange, text.Length);
 				return text.Substring((int)range.Location, (int)range.Length);
 			}
-			set
-			{
-				this.NotImplemented(MethodBase.GetCurrentMethod());
-			}
+			set => ReplaceSelectedText(value ?? string.Empty);
+		}
+
+		unsafe void ReplaceSelectedText(string value)
+		{
+			if (!CanEdit)
+				return;
+			var previousText = GetText();
+			var selection = SelectedRange;
+			SelectedRange = ClampRange(SelectedRange, GetText().Length);
+			fixed (char* ptr = value)
+				Application.SendMessage(Handle, Msg.EM_REPLACESEL, (IntPtr)1, new IntPtr(ptr));
+			if (Owner != null && previousText != GetText())
+				NSAccessibility.PostNotification(this, NSAccessibilityElement.SelectedTextChangedNotification);
+			else
+				NotifySelectionChanged(selection);
 		}
 
 		public virtual bool AccessibilityIsSelectedTextRangeAttributeSettable
 		{
 			[Export("accessibilityIsSelectedTextRangeAttributeSettable")]
-			get => true;
+			get => CanSelect;
 		}
 
 		[Export("accessibilitySetSelectedTextRangeAttribute:")]
@@ -293,49 +346,69 @@ namespace System.Windows.Forms.CocoaInternal
 
 		public override NSRange AccessibilitySelectedTextRange
 		{
-			get => SelectedRange;
-			set => SelectedRange = value;
+			get => IsPassword ? new NSRange(0, 0) : ClampRange(SelectedRange, GetText().Length);
+			set
+			{
+				if (!CanSelect)
+					return;
+				var selection = SelectedRange;
+				SelectedRange = value;
+				NotifySelectionChanged(selection);
+			}
+		}
+
+		void NotifySelectionChanged(NSRange previous)
+		{
+			if (Owner == null)
+				return;
+			var current = SelectedRange;
+			if (previous.Location != current.Location || previous.Length != current.Length)
+				NSAccessibility.PostNotification(this, NSAccessibilityElement.SelectedTextChangedNotification);
 		}
 
 		public override nint AccessibilityInsertionPointLineNumber
 		{
 			get
 			{
-				this.NotImplemented(MethodBase.GetCurrentMethod());
-				return 0;
+				if (IsPassword || Owner == null)
+					return 0;
+				return Math.Max(0, (int)Application.SendMessage(Handle, Msg.EM_LINEFROMCHAR,
+					(IntPtr)SelectedRange.Location, IntPtr.Zero));
 			}
-			set
-			{
-				this.NotImplemented(MethodBase.GetCurrentMethod());
-			}
+			set { } // AppKit defines this information as read-only.
 		}
 
 		[Export("accessibilityFrameForRange:")]
 		public virtual CGRect AccessibilityFrameForRange(NSRange range)
 		{
-			// TODO: Fix for multiline text box and for longer texts that don't fit the box
-			var p = GetCharacterPosition((int)range.Location);
-			var q = GetCharacterPosition((int)range.Location + (int)range.Length);
-			var rect = new CGRect(p.X, p.Y, q.X - p.X, GetLineHeight());
-			//Console.WriteLine($"AccessibilityFrameForRange({range})->{rect}");
-			return rect;
+			if (Owner is not Control owner || IsPassword)
+				return CGRect.Empty;
+			var text = GetText();
+			range = ClampRange(range, text.Length);
+			int start = (int)range.Location, end = start + (int)range.Length;
+			var first = GetCharacterPosition(start);
+			var rect = new Rectangle(first.X, first.Y, 0, owner.Font.Height);
+			var p = first;
+			for (int index = start; index < end; index++)
+			{
+				var q = GetCharacterPosition(index + 1);
+				int width = q.Y == p.Y ? Math.Max(0, q.X - p.X) : 0;
+				// The following caret gives the actual glyph advance, including zero-width
+				// characters. Only a soft-wrap boundary lacks an endpoint on this line.
+				if (q.Y != p.Y && text[index] != '\r' && text[index] != '\n')
+					width = TextRenderer.MeasureText(text.Substring(index, 1), owner.Font,
+						Size.Empty, TextFormatFlags.NoPadding).Width;
+				rect = Rectangle.Union(rect, new Rectangle(p.X, p.Y, width, owner.Font.Height));
+				p = q;
+			}
+			return driver.MonoToNativeScreen(owner.RectangleToScreen(rect));
 		}
 
-		unsafe CGPoint GetCharacterPosition(int index)
+		unsafe Point GetCharacterPosition(int index)
 		{
-			var pt = new POINT[1];
-			fixed (POINT* ptr = &pt[0])
-				Application.SendMessage(Handle, Msg.EM_POSFROMCHAR, new IntPtr(ptr), new IntPtr(index));
-
-			var frame = AccessibilityFrame;
-			return new CGPoint(frame.Location.X + pt[0].x, frame.Location.Y + pt[0].y);
-		}
-
-		int GetLineHeight(int defaultValue = 0)
-		{
-			if (Control.FromHandle(Handle) is Control c)
-				return c.Font.Height;
-			return defaultValue;
+			POINT point = default;
+			Application.SendMessage(Handle, Msg.EM_POSFROMCHAR, new IntPtr(&point), new IntPtr(index));
+			return new Point(point.x, point.y);
 		}
 	}
 }
