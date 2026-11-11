@@ -512,6 +512,7 @@ namespace System.Windows.Forms.CocoaInternal
 
 		private TreeViewAccessibilityBridge treeAccessibility;
 		private ListViewAccessibilityBridge listAccessibility;
+		private TabControlAccessibilityBridge tabAccessibility;
 		private NSObject[] compositeChildren;
 		private NSView[] nativeChildViews;
 		private bool[] nativeChildHidden;
@@ -561,6 +562,8 @@ namespace System.Windows.Forms.CocoaInternal
 			? treeAccessibility ??= new TreeViewAccessibilityBridge(this, driver, tree) : null;
 		private ListViewAccessibilityBridge AccessibleList => Control.FromHandle(Handle) is ListView list && !list.IsDisposed
 			? listAccessibility ??= new ListViewAccessibilityBridge(this, driver, list) : null;
+		private TabControlAccessibilityBridge AccessibleTabs => Control.FromHandle(Handle) is TabControl tabs && !tabs.IsDisposed
+			? tabAccessibility ??= new TabControlAccessibilityBridge(this, driver, tabs) : null;
 
 		public override NSObject[] AccessibilityChildren
 		{
@@ -568,7 +571,7 @@ namespace System.Windows.Forms.CocoaInternal
 			{
 				if (AccessibleGrid is GridAccessibilityBridge grid)
 					return grid.Children(NativeAccessibilityChildren());
-				var items = AccessibleTree?.Children ?? AccessibleList?.Children;
+				var items = AccessibleTree?.Children ?? AccessibleList?.Children ?? AccessibleTabs?.Children;
 				if (items == null) return NativeAccessibilityChildren();
 				var native = NativeAccessibilityChildren();
 				bool same = compositeChildren != null && compositeChildren.Length == items.Length + native.Length;
@@ -590,14 +593,16 @@ namespace System.Windows.Forms.CocoaInternal
 		public override nint AccessibilityColumnCount => AccessibleGrid?.ColumnCount ?? AccessibleList?.ColumnCount ?? base.AccessibilityColumnCount;
 		public override NSObject[] AccessibilitySelectedCells => AccessibleGrid?.SelectedCells ?? base.AccessibilitySelectedCells;
 		public override NSObject[] AccessibilitySelectedRows => AccessibleGrid?.SelectedRows ?? AccessibleTree?.SelectedRows ?? AccessibleList?.SelectedRows ?? base.AccessibilitySelectedRows;
-		public override NSObject[] AccessibilitySelectedChildren => AccessibleGrid?.SelectedCells ?? AccessibleTree?.SelectedRows ?? AccessibleList?.SelectedRows ?? base.AccessibilitySelectedChildren;
+		public override NSObject[] AccessibilitySelectedChildren => AccessibleGrid?.SelectedCells ?? AccessibleTree?.SelectedRows ?? AccessibleList?.SelectedRows ?? AccessibleTabs?.SelectedChildren ?? base.AccessibilitySelectedChildren;
+		public override NSObject[] AccessibilityTabs => AccessibleTabs?.Children ?? base.AccessibilityTabs;
 
 		public override NSObject GetAccessibilityCellForColumn(nint column, nint row) =>
 			AccessibleGrid is GridAccessibilityBridge grid ? grid.CellAt(column, row) :
 			AccessibleList is ListViewAccessibilityBridge list ? list.CellAt(column, row) : base.GetAccessibilityCellForColumn(column, row);
 
 		[Export("accessibilityFocusedUIElement")]
-		public NSObject AccessibilityFocusedElement() => AccessibleGrid?.FocusedElement ?? AccessibleTree?.FocusedElement ?? AccessibleList?.FocusedElement ?? Window?.FirstResponder;
+		public NSObject AccessibilityFocusedElement() => AccessibleGrid?.FocusedElement ?? AccessibleTree?.FocusedElement ??
+			AccessibleList?.FocusedElement ?? AccessibleTabs?.FocusedElement ?? Window?.FirstResponder;
 
 		[Export("accessibilityHitTest:")]
 		public NSObject GridHitTest(CGPoint point)
@@ -605,7 +610,7 @@ namespace System.Windows.Forms.CocoaInternal
 			var grid = AccessibleGrid;
 			if (grid == null)
 			{
-				var item = AccessibleTree?.HitTest(point) ?? AccessibleList?.HitTest(point);
+				var item = AccessibleTree?.HitTest(point) ?? AccessibleList?.HitTest(point) ?? AccessibleTabs?.HitTest(point);
 				if (item != null) return item;
 				if (Window == null)
 					return this;
@@ -630,6 +635,8 @@ namespace System.Windows.Forms.CocoaInternal
 				treeAccessibility = null;
 				listAccessibility?.Dispose();
 				listAccessibility = null;
+				tabAccessibility?.Dispose();
+				tabAccessibility = null;
 				compositeChildren = null;
 				nativeChildViews = null;
 				nativeChildHidden = null;
@@ -667,6 +674,7 @@ namespace System.Windows.Forms.CocoaInternal
 				{
 					if (control is TreeView) return "AXOutline";
 					if (control is ListView list) return list.View == View.Details ? "AXTable" : "AXList";
+					if (control is TabControl) return "AXTabGroup";
 				}
 				return control?.AccessibilityRole();
 			}
@@ -745,7 +753,7 @@ namespace System.Windows.Forms.CocoaInternal
 
 		public override NSObject AccessibilityValue
 		{
-			get => AccessibleSlider is TrackBar slider ? new NSNumber(slider.Value) : Control.FromHandle(Handle)?.AccessibilityValue();
+			get => AccessibleTabs?.SelectedElement ?? (AccessibleSlider is TrackBar slider ? new NSNumber(slider.Value) : Control.FromHandle(Handle)?.AccessibilityValue());
 			set
 			{
 				if (!CanSetSlider || value is not NSNumber number)

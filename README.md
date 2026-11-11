@@ -28,7 +28,7 @@ The Cocoa bridge exposes numeric check/radio states and TrackBar bounds/actions.
 
 Native accessibility presses use the managed default action; checkbox actions follow the normal click/`AutoCheck`/three-state pipeline. Control names (explicit `AccessibleName`, accessibility-object overrides, or mnemonic-free captions) are exposed as labels, while `AccessibleDescription` is exposed as help. Native metadata is refreshed across handle recreation. Managed custom views announce value, focus, layout, and selection changes; subscriptions are removed when their native handle is destroyed.
 
-TreeView exposes a lazy outline with disclosure, selection, checkbox actions, and cancellation-aware expansion. ListView exposes item selection/checking and Details headers/cells; virtual lists expose visible rows without fetching the entire data set, with indexed cell lookup available in Details mode.
+TreeView exposes a lazy outline with disclosure, selection, checkbox actions, and cancellation-aware expansion. ListView exposes item selection/checking and Details headers/cells; virtual lists expose visible rows without fetching the entire data set, with indexed cell lookup available in Details mode. TabControl exposes selectable tab items while retaining the selected page's real native editors. Item identities survive sorting/reordering, and removed proxies cannot act on replacement items. Native container children track nested additions, removals, and visibility changes without duplicating virtual items.
 
 Custom controls with the `EDIT` window class use `MonoEditView`: accessibility value and selected-text writes respect enabled, visible, read-only, and lifetime state; UTF-16 ranges are clamped safely; password contents are not exposed. Insertion-line and multiline/scrolled range geometry use the owner's edit messages. Such controls must implement the existing text/selection/replacement, `EM_LINEFROMCHAR`, and pointer-based `EM_POSFROMCHAR` contracts. Standard TextBox controls retain their native AppKit editors.
 
@@ -88,12 +88,14 @@ slider action bounds and change notifications, rejected numeric values and
 unavailable controls, grid cell identity across column reorder/hiding, detached-cell
 safety, validation-aware value edits, and grid/column/row/cell read-only behavior.
 Run it with the Forms runner's `--where 'class == FormsTest.Test.CocoaAccessibilityTests'`.
-`ControlAccessibilityTests` covers native actions and metadata, nested container updates, and handle recreation.
-`TextAccessibilityTests` covers custom EDIT selection, geometry, and protected values.
-`TreeAccessibilityTests` covers tree hierarchy, disclosure cancellation, and stable node identity.
-`ListAccessibilityTests` covers list selection, Details cells, and virtual item identity.
+Additional fixtures (`ControlAccessibilityTests`, `TextAccessibilityTests`,
+`TreeAccessibilityTests`, `ListAccessibilityTests`, and `TabAccessibilityTests`)
+cover native actions and metadata, nested container updates and handle recreation,
+custom EDIT selection/geometry/protected values, item hierarchy and identity,
+selection/disclosure cancellation, virtual lists, and retained native tab editors.
 Select all accessibility fixtures with `--where 'class =~ AccessibilityTests'`.
-Native AX properties/actions are covered; spoken VoiceOver announcements require an interactive check.
+These exercise native AppKit accessibility properties/actions; spoken VoiceOver
+announcements still require an interactive screen-reader check.
 The manual application remains available for visual rendering, native dialogs,
 printing, notifications, networking, and system-changing experiments; those are
 not covered by this deterministic suite.
