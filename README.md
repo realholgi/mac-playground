@@ -77,6 +77,11 @@ of hidden or out-of-range scroll targets. These use the repository's grid direct
 the separate `DataGridForm` demo depends on external eM Client controls.
 Accessibility tests cover child IDs and bounds, metadata changes, checkbox actions
 and state, focus selection, invalid child IDs, and ownerless objects.
+`CocoaAccessibilityTests` exercises the native AppKit accessibility surface:
+slider action bounds and change notifications, rejected numeric values and
+unavailable controls, grid cell identity across column reorder/hiding, detached-cell
+safety, validation-aware value edits, and grid/column/row/cell read-only behavior.
+Run it with the Forms runner's `--where 'class == FormsTest.Test.CocoaAccessibilityTests'`.
 The manual application remains available for visual rendering, native dialogs,
 printing, notifications, networking, and system-changing experiments; those are
 not covered by this deterministic suite.
