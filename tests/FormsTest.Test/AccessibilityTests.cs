@@ -59,11 +59,12 @@ public class AccessibilityTests
             form.Show();
             AppKit.NSApplication.SharedApplication.Activate();
             form.Activate();
+            checkBox.Focus();
             Assert.That(() =>
             {
                 Application.DoEvents();
-                return AppKit.NSApplication.SharedApplication.Active && form.ContainsFocus;
-            }, Is.True.After(2000, 10), "The test window must own native focus before selecting an accessible child.");
+                return AppKit.NSApplication.SharedApplication.Active && checkBox.Focused;
+            }, Is.True.After(2000, 10), "The checkbox must own native focus before selecting another accessible child.");
             var accessible = (IAccessible)form.AccessibilityObject;
 
             accessible.accDoDefaultAction(1);

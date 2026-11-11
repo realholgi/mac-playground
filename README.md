@@ -60,7 +60,8 @@ Use `osx-x64` instead of `osx-arm64` on Intel Macs. The NUnitLite runner forces
 execution on the process main thread, uses regular AppKit application policy, and
 requests [cooperative activation](https://developer.apple.com/documentation/appkit/nsrunningapplication/activate(from:options:))
 without an `Application.Run` loop. Focus-sensitive tests wait for actual native
-focus; keep the desktop unlocked and avoid switching applications during the run.
+focus and explicitly focus an initial control before testing focus transitions;
+keep the desktop unlocked and avoid switching applications during the run.
 Do not run this suite through `dotnet test`. It exits nonzero on failures and
 writes NUnit XML results.
 NUnitLite options such as `--where` can select individual tests.
