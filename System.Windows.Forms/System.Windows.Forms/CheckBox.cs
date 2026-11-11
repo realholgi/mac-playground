@@ -97,7 +97,8 @@ namespace System.Windows.Forms {
 			#region CheckBoxAccessibleObject Methods
 			public override void DoDefaultAction ()
 			{
-				owner.Checked = !owner.Checked;
+				if (owner.Enabled && owner.Visible && !owner.IsDisposed)
+					owner.OnClick (EventArgs.Empty);
 			}
 			#endregion	// CheckBoxAccessibleObject Methods
 		}

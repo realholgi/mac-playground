@@ -1242,8 +1242,8 @@ namespace System.Windows.Forms.Mac
 
 		public static string AccessibilityTitle(this Control control)
 		{
-			if (!string.IsNullOrEmpty(control?.AccessibleName))
-				return control.AccessibleName;
+			if (!string.IsNullOrEmpty(control?.AccessibilityObject.Name))
+				return control.AccessibilityObject.Name;
 			string text = null;
 			if (control.GetStyle(ControlStyles.UseTextForAccessibility))
 				text = control.Text?.RemoveMnemonic();
@@ -1253,7 +1253,7 @@ namespace System.Windows.Forms.Mac
 
 		public static string AccessibilityLabel(this Control control)
 		{
-			return (control?.AccessibilityObject is AccessibleObject obj) ? obj.Description : control.AccessibleDescription;
+			return control.AccessibilityTitle();
 		}
 
 		public static NSObject AccessibilityValue(this Control control)

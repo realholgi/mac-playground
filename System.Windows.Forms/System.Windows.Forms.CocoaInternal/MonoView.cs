@@ -510,8 +510,52 @@ namespace System.Windows.Forms.CocoaInternal
 			}
 		}
 
+		private NSView[] nativeChildViews;
+		private bool[] nativeChildHidden;
+		private NSObject[] nativeAccessibilityChildren;
+
+		internal void InvalidateAccessibilityChildren()
+		{
+			for (NSView current = this; current != null; current = current.Superview)
+				if (current is MonoView view)
+				{
+					view.nativeAccessibilityChildren = null;
+				}
+		}
+
+		private NSObject[] NativeAccessibilityChildren()
+		{
+			// AppKit's base AXChildren can derive from our AXRows/AXTabs. Start with
+			// actual subviews instead, so virtual items are not duplicated and real
+			// page controls/editors are not replaced by the virtual tab strip.
+			var subviews = Subviews;
+			bool same = nativeAccessibilityChildren != null && nativeChildViews.Length == subviews.Length;
+			int visibleCount = 0;
+			for (int i = 0; i < subviews.Length; i++)
+			{
+				bool hidden = subviews[i].Hidden;
+				if (!hidden) visibleCount++;
+				if (same && (!ReferenceEquals(nativeChildViews[i], subviews[i]) || nativeChildHidden[i] != hidden))
+					same = false;
+			}
+			if (same) return nativeAccessibilityChildren;
+			nativeChildViews = subviews;
+			nativeChildHidden = new bool[subviews.Length];
+			var visible = new NSObject[visibleCount];
+			for (int i = 0, index = 0; i < subviews.Length; i++)
+			{
+				nativeChildHidden[i] = subviews[i].Hidden;
+				if (!nativeChildHidden[i]) visible[index++] = subviews[i];
+			}
+			if (visibleCount == 0)
+				return nativeAccessibilityChildren = Array.Empty<NSObject>();
+			using var original = NSArray.FromNSObjects(visible);
+			return nativeAccessibilityChildren = NSAccessibility.GetUnignoredChildren(original);
+		}
+
+
 		public override NSObject[] AccessibilityChildren => AccessibleGrid is GridAccessibilityBridge grid
-			? grid.Children(base.AccessibilityChildren) : base.AccessibilityChildren;
+			? grid.Children(NativeAccessibilityChildren()) : NativeAccessibilityChildren();
 		public override NSObject[] AccessibilityRows => AccessibleGrid?.Rows ?? base.AccessibilityRows;
 		public override NSObject[] AccessibilityColumnHeaderUIElements => AccessibleGrid?.ColumnHeaders ?? base.AccessibilityColumnHeaderUIElements;
 		public override nint AccessibilityRowCount => AccessibleGrid?.RowCount ?? base.AccessibilityRowCount;
@@ -551,6 +595,9 @@ namespace System.Windows.Forms.CocoaInternal
 			{
 				gridAccessibility?.Dispose();
 				gridAccessibility = null;
+				nativeChildViews = null;
+				nativeChildHidden = null;
+				nativeAccessibilityChildren = null;
 			}
 			base.Dispose(disposing);
 		}
@@ -559,6 +606,7 @@ namespace System.Windows.Forms.CocoaInternal
 		{
 			switch (selector.Name)
 			{
+				case "accessibilityPerformPress": return CanPress;
 				case "accessibilityValue": return Control.FromHandle(Handle).SupportsAccessibilityValue();
 				case "setAccessibilityValue:": return AccessibilityIsValueAttributeSettable();
 				case "accessibilityPerformIncrement":
@@ -587,6 +635,20 @@ namespace System.Windows.Forms.CocoaInternal
 		public override string AccessibilityLabel
 		{
 			get => Control.FromHandle(Handle)?.AccessibilityLabel();
+		}
+
+		public override string AccessibilityHelp => Control.FromHandle(Handle)?.AccessibilityObject.Description;
+
+		private bool CanPress => Control.FromHandle(Handle) is Control control &&
+			control.Enabled && control.Visible && !control.IsDisposed &&
+			!string.IsNullOrEmpty(control.AccessibilityObject.DefaultAction);
+
+		public override bool AccessibilityPerformPress()
+		{
+			if (!CanPress)
+				return false;
+			Control.FromHandle(Handle).AccessibilityObject.DoDefaultAction();
+			return true;
 		}
 
 		public override bool AccessibilityEnabled => Control.FromHandle(Handle)?.Enabled ?? false;

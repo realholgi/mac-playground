@@ -78,6 +78,15 @@ namespace System.Windows.Forms
 		internal                ControlNativeWindow	window;			// object for native window handle
 		private                 IWindowTarget window_target;
 		string                  name; // for object naming
+#if MAC
+		private CocoaInternal.ControlAccessibilityNotifications accessibilityNotifications;
+		internal event EventHandler AccessibilityMetadataChanged;
+		private void NotifyAccessibilityMetadataChanged (bool description)
+		{
+			accessibilityNotifications?.MetadataChanged (description);
+			AccessibilityMetadataChanged?.Invoke (this, EventArgs.Empty);
+		}
+#endif
 
 		// State
 		bool                    is_created; // true if OnCreateControl has been sent
@@ -294,6 +303,9 @@ namespace System.Windows.Forms
 
 				set {
 					base.Name = value;
+#if MAC
+					owner.NotifyAccessibilityMetadataChanged (false);
+#endif
 				}
 			}
 
@@ -1944,6 +1956,9 @@ namespace System.Windows.Forms
 
 			set {
 				accessible_description = value;
+#if MAC
+				NotifyAccessibilityMetadataChanged (true);
+#endif
 			}
 		}
 
@@ -1957,6 +1972,9 @@ namespace System.Windows.Forms
 
 			set {
 				accessible_name = value;
+#if MAC
+				NotifyAccessibilityMetadataChanged (false);
+#endif
 			}
 		}
 
@@ -5972,6 +5990,10 @@ namespace System.Windows.Forms
 
 		[EditorBrowsable(EditorBrowsableState.Advanced)]
 		protected virtual void OnHandleCreated(EventArgs e) {
+#if MAC
+			accessibilityNotifications?.Dispose ();
+			accessibilityNotifications = new CocoaInternal.ControlAccessibilityNotifications (this, Handle.ToNSView ());
+#endif
 			EventHandler eh = (EventHandler)(Events [HandleCreatedEvent]);
 			if (eh != null)
 				eh (this, e);
@@ -5979,6 +6001,10 @@ namespace System.Windows.Forms
 
 		[EditorBrowsable(EditorBrowsableState.Advanced)]
 		protected virtual void OnHandleDestroyed(EventArgs e) {
+#if MAC
+			accessibilityNotifications?.Dispose ();
+			accessibilityNotifications = null;
+#endif
 			EventHandler eh = (EventHandler)(Events [HandleDestroyedEvent]);
 			if (eh != null)
 				eh (this, e);

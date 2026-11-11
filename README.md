@@ -26,6 +26,8 @@ WinForms copies the real managed `Accessibility.dll` from the official `Microsof
 
 The Cocoa bridge exposes numeric check/radio states and TrackBar bounds/actions. DataGridView uses lazy, identity-cached AppKit proxies over its managed table/header/row/cell objects, retaining native editors. Value edits populate the normal editor and commit through `EndEdit`; applications must reject invalid drafts in `CellValidating` to preserve the committed value. Row validation continues on normal row navigation. Structural changes reconcile proxies; detached nodes cannot act on replacement rows. Unbound grids do not rebind on inherited binding-context initialization, which would otherwise prematurely commit a half-initialized combo editor.
 
+Native accessibility presses use the managed default action; checkbox actions follow the normal click/`AutoCheck`/three-state pipeline. Control names (explicit `AccessibleName`, accessibility-object overrides, or mnemonic-free captions) are exposed as labels, while `AccessibleDescription` is exposed as help. Native metadata is refreshed across handle recreation. Managed custom views announce value, focus, layout, and selection changes; subscriptions are removed when their native handle is destroyed.
+
 `MacBridge.Test` uses NUnit 5 and PackageReference dependencies only. Run it with `dotnet test MacBridge.Test/MacBridge.Test.csproj`. Its active image-conversion test references `System.Drawing.Common` directly and loads its copied JPEG fixture from the test output directory, so the test project does not require external WinApi sources. The separate `MacBridge` project still requires the external `../../../WinApi` source tree linked by `MacBridge.csproj`; it is not included in this repository.
 
 The demo uses `System.Resources.Extensions` 10.0.14, and `MacBridge.Test` uses `Microsoft.NET.Test.Sdk` 18.11.0.
@@ -82,6 +84,9 @@ slider action bounds and change notifications, rejected numeric values and
 unavailable controls, grid cell identity across column reorder/hiding, detached-cell
 safety, validation-aware value edits, and grid/column/row/cell read-only behavior.
 Run it with the Forms runner's `--where 'class == FormsTest.Test.CocoaAccessibilityTests'`.
+`ControlAccessibilityTests` covers native actions and metadata, nested container updates, and handle recreation.
+Select all accessibility fixtures with `--where 'class =~ AccessibilityTests'`.
+Native AX properties/actions are covered; spoken VoiceOver announcements require an interactive check.
 The manual application remains available for visual rendering, native dialogs,
 printing, notifications, networking, and system-changing experiments; those are
 not covered by this deterministic suite.
